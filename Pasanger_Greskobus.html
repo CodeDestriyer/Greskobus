@@ -2881,14 +2881,80 @@ function updateAllCounts() {
     setCount('mobileCountEuUa', euua.length);
     setCount('mobileCountTrips', trips.length);
 
-    // Показати/сховати точку-індикатор нових лідів
-    const dot24pc = document.getElementById('pcNew24Dot');
-    const dot24mob = document.getElementById('mobileNew24Dot');
-    if (dot24pc) dot24pc.style.display = new24.length > 0 ? 'inline-block' : 'none';
-    if (dot24mob) dot24mob.style.display = new24.length > 0 ? 'inline-block' : 'none';
+    // PWA Badge: лічильник на іконці додатку
+    updateAppBadge(new24.length);
 }
 
 function setCount(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; }
+
+// PWA App Badge — показує лічильник на іконці додатку на телефоні
+function updateAppBadge(count) {
+    // 1. navigator.setAppBadge — працює на Android (Chrome PWA) та десктоп
+    if ('setAppBadge' in navigator) {
+        if (count > 0) {
+            navigator.setAppBadge(count).catch(() => {});
+        } else {
+            navigator.clearAppBadge().catch(() => {});
+        }
+    }
+    // 2. Оновлюємо title сторінки — видно в табах і на деяких платформах
+    const baseTitle = 'GrescoBus CRM';
+    document.title = count > 0 ? '(' + count + ') ' + baseTitle : baseTitle;
+
+    // 3. Динамічний favicon з лічильником (працює скрізь)
+    if (count > 0) {
+        updateFaviconBadge(count);
+    } else {
+        restoreOriginalFavicon();
+    }
+}
+
+// Малюємо червоний кружок з числом на favicon
+let _originalFaviconHref = null;
+function updateFaviconBadge(count) {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    if (!_originalFaviconHref) _originalFaviconHref = link.href;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        const size = 64;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+
+        // Червоний кружок
+        const r = size * 0.28;
+        const cx = size - r - 2;
+        const cy = r + 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.fillStyle = '#dc2626';
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Число
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold ' + (r * 1.3) + 'px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count > 99 ? '99+' : String(count), cx, cy + 1);
+
+        link.href = c.toDataURL('image/png');
+    };
+    img.src = _originalFaviconHref;
+}
+
+function restoreOriginalFavicon() {
+    if (_originalFaviconHref) {
+        const link = document.querySelector('link[rel="icon"]');
+        if (link) link.href = _originalFaviconHref;
+    }
+}
 
 // Перевірка напрямку пасажира.
 // ВАЖЛИВО: використовуємо startsWith замість includes, бо "Україна-Європа"
