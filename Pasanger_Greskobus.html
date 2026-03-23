@@ -47,14 +47,19 @@
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.7; }
         .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; overflow: visible; padding-right: 4px; }
         .sync-indicator { display: none; }
-        .user-avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0; cursor: pointer; position: relative; overflow: visible; }
-        .user-avatar::after { content: ''; position: absolute; bottom: 0; left: 0; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #1a3a5e; z-index: 10; background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        /* Спільний стиль для всіх аватарів в хедері */
+        .hdr-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; overflow: visible; flex-shrink: 0; }
+        .hdr-avatar::after { content: ''; position: absolute; bottom: -1px; left: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #1a3a5e; z-index: 10; }
+        /* Свій аватар — sync статус */
+        .user-avatar { cursor: pointer; }
+        .user-avatar::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
         .user-avatar.sync-ok::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); animation: none; }
         .user-avatar.sync-error::after { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
         .user-avatar.sync-loading::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        /* Інші менеджери — завжди зелений */
+        .presence-dot { cursor: default; }
+        .presence-dot::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
         .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 2px; }
-        .presence-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; cursor: default; flex-shrink: 0; overflow: visible; }
-        .presence-dot::after { content: ''; position: absolute; bottom: 0; left: 0; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; border: 2.5px solid #1a3a5e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
 
         /* MAIN LAYOUT */
         .main-layout { display: flex; min-height: calc(100vh - 52px); }
@@ -953,7 +958,7 @@
         </div>
         <div class="header-right">
             <div class="presence-bar" id="presenceBar"></div>
-            <div class="user-avatar sync-loading" id="userAvatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
+            <div class="hdr-avatar user-avatar sync-loading" id="userAvatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
         </div>
     </div>
 </header>
@@ -1955,7 +1960,7 @@ function renderPresenceBar(managers) {
     bar.innerHTML = others.map(function(m, i) {
         var initials = m.name.trim().split(/\s+/).map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
         var color = colors[i % colors.length];
-        return '<div class="presence-dot" style="background:' + color + '" title="' + m.name + ' — онлайн">' +
+        return '<div class="hdr-avatar presence-dot" style="background:' + color + '" title="' + m.name + ' — онлайн">' +
             initials + '</div>';
     }).join('');
 }
