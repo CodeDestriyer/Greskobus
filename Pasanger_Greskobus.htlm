@@ -922,7 +922,7 @@
 <header class="header">
     <div class="header-top">
         <button class="burger-btn" onclick="openSideMenu()">☰</button>
-        <div class="logo">Esco<span>Express</span></div>
+        <div class="logo">Gresco<span>Bus</span></div>
         <div class="search-box">
             <span class="search-icon">🔍</span>
             <input class="search-input" type="text" id="globalSearch" placeholder="Пошук по ПІБ або телефону..." oninput="onSearchInput()">
@@ -1560,7 +1560,7 @@ const OTHER_SECTIONS = [
     { key:'system', title:'🔧 Системні', fields:['pax_id','smartId','dateCreated','sourceSheet','cliId','bookingId'], readonly:true }
 ];
 function getOsnovneFields() {
-    try { const s = localStorage.getItem('esco_osnovne_cols'); if (s) return JSON.parse(s); } catch(e) {}
+    try { const s = localStorage.getItem('gresco_osnovne_cols'); if (s) return JSON.parse(s); } catch(e) {}
     return DEFAULT_OSNOVNE_FIELDS;
 }
 function getDetailSections() {
@@ -1620,10 +1620,10 @@ let paymentsCache = {}; // Кеш платежів: { PAX_ID: [...] }
 
 // Ім'я менеджера — зберігається в localStorage
 function getManagerName() {
-    return localStorage.getItem('esco_manager_name') || '';
+    return localStorage.getItem('gresco_manager_name') || '';
 }
 function setManagerName(name) {
-    localStorage.setItem('esco_manager_name', name);
+    localStorage.setItem('gresco_manager_name', name);
     updateAvatarUI();
 }
 function updateAvatarUI() {
@@ -4919,7 +4919,7 @@ function saveColumnConfig() {
         alert('Оберіть хоча б одну колонку');
         return;
     }
-    localStorage.setItem('esco_osnovne_cols', JSON.stringify(colCfgTemp));
+    localStorage.setItem('gresco_osnovne_cols', JSON.stringify(colCfgTemp));
     closeModal('columnModal');
     // Re-render open details
     if (openDetailsId) {
