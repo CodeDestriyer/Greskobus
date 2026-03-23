@@ -7290,26 +7290,8 @@ function obFinish(completed) {
     });
 }
 
-// ── Вітання при першому вході ──
-function obWelcomeFlow() {
-    if (localStorage.getItem(OB_KEY)) return;
-    // Показати коротке welcome з кнопками
-    _obCat = { id: 'welcome', name: 'Вітання' };
-    _obSteps = [
-        { t: '#userAvatar', title: '👤 Ваш аватар', desc: 'Натисніть щоб змінити менеджера. Кнопка ✏️ — змінити ім\'я слоту' },
-        { t: null, title: '📲 Скачайте додаток!', desc: 'Android: Chrome → ⋮ → "На головний екран". iPhone: Safari → 📤 → "На Початковий екран"' },
-        { t: '.bottom-nav', title: '🎓 Навчання', desc: 'Натисніть на аватар → кнопка "🎓 Навчання" щоб вивчити всі функції. Доступно в будь-який момент!' }
-    ];
-    _obStep = 0;
-    document.getElementById('obOverlay').classList.add('show');
-    obRender();
-}
-
-function checkOnboardingAutoStart() {
-    if (!localStorage.getItem(OB_KEY) && getManagerName()) {
-        setTimeout(obWelcomeFlow, 800);
-    }
-}
+// Навчання тільки по кнопці — без автозапуску
+function checkOnboardingAutoStart() { }
 </script>
 </body>
 </html>
