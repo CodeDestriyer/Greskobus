@@ -4028,13 +4028,14 @@ async function savePassenger() {
                 p['Валюта багажу'] = formData.currencyWeight;
                 p['Примітка'] = formData.note;
             }
-            // Чекаємо поки дані реально оновляться у списку
-            showLoader('⏳ Оновлення списку...');
-            await silentSync(false, true);
+            // Одразу закриваємо і рендеримо — дані вже оновлені локально
             hideLoader();
             editingPaxId = null;
             closeModal('passengerModal');
+            render();
             showToast('✅ Пасажира оновлено');
+            // Фонова синхронізація
+            silentSync(false, true);
         } else {
             hideLoader();
             showToast('❌ ' + (res.error || 'Помилка збереження'));
@@ -4066,17 +4067,50 @@ async function savePassenger() {
         data: formData
     });
     if (res.ok) {
-        // Якщо менеджер обрав рейс з suggest панелі — призначаємо
+        // Оптимістичне оновлення — одразу додаємо ліда в локальний масив
+        const newPax = {
+            'PAX_ID': res.pax_id,
+            'Піб': name,
+            'Телефон пасажира': phone,
+            'Телефон реєстратора': formData.phoneReg,
+            'Кількість місць': formData.seats,
+            'Адреса відправки': formData.from,
+            'Адреса прибуття': formData.to,
+            'Дата виїзду': date,
+            'Таймінг': formData.timing,
+            'Ціна квитка': formData.price,
+            'Валюта квитка': formData.currency,
+            'Завдаток': formData.deposit,
+            'Валюта завдатку': formData.currencyDeposit,
+            'Вага багажу': formData.weight,
+            'Ціна багажу': formData.weightPrice,
+            'Валюта багажу': formData.currencyWeight,
+            'Примітка': formData.note,
+            'Напрям': dir === 'eu-ua' ? 'Європа-Україна' : 'Україна-Європа',
+            'Статус ліда': 'Новий',
+            'Статус оплати': 'Не оплачено',
+            'Статус CRM': 'Активний',
+            'Дата створення': new Date().toISOString(),
+            'CAL_ID': selectedFormCalId || '',
+            _sheet: dir === 'eu-ua' ? 'eu' : 'ue'
+        };
+        passengers.unshift(newPax);
+
+        // Призначаємо рейс паралельно (не чекаємо)
         if (selectedFormCalId) {
-            await apiPost('assignTrip', { cal_id: selectedFormCalId, pax_ids: [res.pax_id] });
+            apiPost('assignTrip', { cal_id: selectedFormCalId, pax_ids: [res.pax_id] });
         }
         selectedFormCalId = '';
-        // Чекаємо поки дані реально з'являться у списку
-        showLoader('⏳ Оновлення списку...');
-        await silentSync(false, true);
+
+        // Одразу закриваємо модалку і показуємо ліда
         hideLoader();
         closeModal('passengerModal');
+        updateAllCounts();
+        render();
         showToast('✅ Пасажир додано: ' + res.pax_id);
+
+        // Фонова синхронізація — підтягне точні дані з сервера
+        silentSync(false, true);
     } else {
         hideLoader();
         showToast('❌ ' + (res.error || 'Помилка'));
