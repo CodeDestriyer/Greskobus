@@ -779,6 +779,17 @@
             .card-phone { min-width: auto; font-size: 12px; }
             .card-right-section { padding: 4px 6px; }
             .trips-grid { grid-template-columns: 1fr; }
+            /* Mobile: кнопки дій більші для пальців */
+            .btn-card-action { padding: 12px 8px; font-size: 12px; min-height: 44px; }
+            .card-actions { gap: 6px; }
+            .card-actions .btn-card-action { min-width: 70px; flex: 1 1 calc(33% - 6px); }
+            /* Mobile: кнопки рейсів/маршрутів */
+            .trip-card-actions { flex-wrap: wrap; gap: 6px; }
+            .trip-action-btn { padding: 10px 8px; font-size: 12px; min-height: 44px; flex: 1 1 auto; }
+            /* Mobile: details grid 2 колонки замість 4 */
+            .details-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            /* Mobile: messenger popup кнопки більші */
+            .messenger-popup-item { padding: 14px 12px; font-size: 14px; min-height: 48px; }
         }
         @media (min-width: 901px) {
             .side-menu, .side-menu-overlay { display: none !important; }
@@ -1193,10 +1204,10 @@
 <!-- BOTTOM NAV (Mobile) -->
 <nav class="bottom-nav">
     <button class="nav-item active" id="navPax" onclick="showPaxView('all')"><span>👥</span>Пасажири</button>
-    <button class="nav-item" id="navParcels" onclick="window.open('Crm_Posylky.html','_blank')"><span>📦</span>Посилки</button>
+    <button class="nav-item" id="navTrips" onclick="showTripsView()"><span>🚐</span>Рейси</button>
     <button class="nav-item" onclick="silentSync(true)"><span>🔄</span>Синхр.</button>
-    <button class="nav-item" onclick="openColumnConfigurator()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
+    <button class="nav-item" onclick="openSideMenu()"><span>☰</span>Меню</button>
 </nav>
 
 <!-- COLUMN CONFIGURATOR MODAL -->
@@ -2366,15 +2377,14 @@ function renderRouteCard(r, idx, sheetName) {
                     </div>`;
                 }).join('')}
             </div>
-            <!-- Кнопки дій для ліда -->
+            <!-- Кнопки дій для ліда: 2 рядки -->
             <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-                <button class="btn-card-action btn-call" onclick="event.stopPropagation(); window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
-                <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
-                <button class="btn-card-action btn-edit" onclick="event.stopPropagation(); openRouteEditModal('${rteId}','${safeSheet}')">✏️ Редагувати</button>
-                <button class="btn-card-action" style="background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archiveFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">📦 Архівувати</button>
-                <button class="btn-card-action" style="background:#fee2e2;color:#dc2626;" onclick="event.stopPropagation(); deleteFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ З маршруту</button>
-                <button class="btn-card-action" style="background:#7f1d1d;color:white;" onclick="event.stopPropagation(); deleteFromRouteFull('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
-                <button class="btn-card-action" style="background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); transferRouteLeadModal('${rteId}','${safeSheet}')">🔄 Пересадити</button>
+                <button class="btn-card-action btn-call" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
+                <button class="btn-card-action btn-write" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
+                <button class="btn-card-action btn-edit" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); openRouteEditModal('${rteId}','${safeSheet}')">✏️ Редагувати</button>
+                <button class="btn-card-action" style="flex:1 1 calc(33% - 6px);background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); transferRouteLeadModal('${rteId}','${safeSheet}')">🔄 Пересадити</button>
+                <button class="btn-card-action" style="flex:1 1 calc(33% - 6px);background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archiveFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">📦 Архів</button>
+                <button class="btn-card-action btn-delete" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); deleteFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
             </div>
         </div>
     </div>`;
@@ -3261,12 +3271,14 @@ function toggleCardActions(id) {
 // phone — телефон пасажира, smartId — ID SmartSender (може бути пустий)
 function openMessengerPopup(phone, smartId) {
     const grid = document.getElementById('messengerGrid');
-    const cleanPhone = (phone || '').replace(/[^+\d]/g, ''); // Залишаємо тільки +цифри
+    const cleanPhone = (phone || '').replace(/[^+\d]/g, '');
+    var smartBtn = (smartId && smartId.trim()) ? `<button class="messenger-popup-item" onclick="openMessenger('smartsender','${smartId}')">🤖 SmartSender</button>` : '';
     grid.innerHTML = `
-        <button class="messenger-popup-item" onclick="openMessenger('viber','${cleanPhone}')">💬 Viber</button>
-        <button class="messenger-popup-item" onclick="openMessenger('telegram','${cleanPhone}')">✈️ Telegram</button>
-        <button class="messenger-popup-item" onclick="openMessenger('whatsapp','${cleanPhone}')">📱 WhatsApp</button>
-        <button class="messenger-popup-item" onclick="openMessenger('smartsender','${smartId || ''}')">🤖 SmartSender</button>
+        <button class="messenger-popup-item" onclick="closeMessengerPopup(); window.open('tel:${cleanPhone}')" style="background:var(--primary);color:white;border-color:var(--primary)">📞 Дзвінок</button>
+        <button class="messenger-popup-item" onclick="openMessenger('viber','${cleanPhone}')" style="background:#7360f2;color:white;border-color:#7360f2">💬 Viber</button>
+        <button class="messenger-popup-item" onclick="openMessenger('telegram','${cleanPhone}')" style="background:#0088cc;color:white;border-color:#0088cc">✈️ Telegram</button>
+        <button class="messenger-popup-item" onclick="openMessenger('whatsapp','${cleanPhone}')" style="background:#25d366;color:white;border-color:#25d366">📱 WhatsApp</button>
+        ${smartBtn}
     `;
     document.getElementById('messengerOverlay').classList.add('show');
 }
@@ -3282,15 +3294,17 @@ function closeMessengerPopup() {
 function openMessenger(type, contact) {
     closeMessengerPopup();
     if (!contact) { showToast('⚠️ Контакт не вказаний'); return; }
+    var phone = contact.replace(/[^+\d]/g, '');
+    var phoneNoPlus = phone.replace('+', '');
     switch (type) {
         case 'viber':
-            window.open('viber://chat?number=' + encodeURIComponent(contact), '_blank');
+            window.open('viber://chat?number=%2B' + phoneNoPlus, '_blank');
             break;
         case 'telegram':
-            window.open('https://t.me/' + contact, '_blank');
+            window.open('https://t.me/+' + phoneNoPlus, '_blank');
             break;
         case 'whatsapp':
-            window.open('https://wa.me/' + contact.replace('+', ''), '_blank');
+            window.open('https://wa.me/' + phoneNoPlus, '_blank');
             break;
         case 'smartsender':
             window.open('https://smartsender.com/contacts/' + encodeURIComponent(contact), '_blank');
@@ -4069,6 +4083,7 @@ function renderTripCard(t) {
             </div>
             <div class="trip-card-actions">
                 <button class="trip-action-btn" onclick="editTrip('${safeCalId}')">✏️ Редагувати</button>
+                <button class="trip-action-btn" onclick="showTripPassengers('${safeCalId}')">👥 Пасажири</button>
                 <button class="trip-action-btn" onclick="archiveTrip('${safeCalId}','${safeCity}','${safeDate}')">📦 Архів</button>
                 <button class="trip-action-btn danger" onclick="deleteTrip('${safeCalId}','${safeCity}','${safeDate}')">🗑️</button>
             </div>
