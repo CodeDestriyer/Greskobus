@@ -4150,18 +4150,29 @@ async function savePassenger() {
         return;
     }
 
-    // CREATE MODE — duplicate check
-    const dupRes = await apiPost('checkDuplicates', { sheet: dir === 'eu-ua' ? 'eu' : 'ue', pib: name, phone, date });
-    if (dupRes.exact) {
+    // CREATE MODE — локальна перевірка дублікатів (надійніша за API)
+    const nameLower = name.toLowerCase().trim();
+    const phoneClean = phone.replace(/[\s\-\(\)]/g, '');
+    let localExact = null, localSoft = null;
+    for (const p of passengers) {
+        const pName = String(p['Піб'] || '').toLowerCase().trim();
+        const pPhone = String(p['Телефон пасажира'] || '').replace(/[\s\-\(\)]/g, '');
+        const pDate = String(p['Дата виїзду'] || '').trim();
+        if (pName === nameLower && pPhone === phoneClean && pDate === date && nameLower && phoneClean && date) {
+            localExact = p; break;
+        }
+        if (!localSoft && pName === nameLower && pPhone === phoneClean && nameLower && phoneClean) {
+            localSoft = p;
+        }
+    }
+    if (localExact) {
         saveBtn.disabled = false; saveBtn.textContent = origText; saveBtn.style.opacity = '';
-        showConfirm('❌ Точний дублікат!\n\n' + dupRes.match.pib + '\n' + dupRes.match.phone + '\n\nТакий запис вже існує. Скасувати?', function(yes) {
-            // Просто закриваємо — нічого не зберігаємо
-        });
+        showConfirm('❌ Точний дублікат!\n\n' + localExact['Піб'] + '\n' + localExact['Телефон пасажира'] + '\n\nТакий запис вже існує. Скасувати?', function(yes) {});
         return;
     }
-    if (dupRes.soft) {
+    if (localSoft) {
         const confirmed = await new Promise(resolve => {
-            showConfirm('⚠️ Схожий запис знайдено!\n\n' + dupRes.match.pib + '\n' + dupRes.match.phone + '\n\nЗберегти все одно?', resolve);
+            showConfirm('⚠️ Схожий запис знайдено!\n\n' + localSoft['Піб'] + '\n' + localSoft['Телефон пасажира'] + '\n\nЗберегти все одно?', resolve);
         });
         if (!confirmed) {
             saveBtn.disabled = false; saveBtn.textContent = origText; saveBtn.style.opacity = '';
