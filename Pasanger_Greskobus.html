@@ -10,6 +10,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a3a5e">
     <meta name="application-name" content="GrescoBus CRM">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="manifest" href="manifest.json">
     <title>GrescoBus CRM Пасажири v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -45,9 +49,21 @@
         .search-input::placeholder { color: rgba(255,255,255,0.6); }
         .search-input:focus { background: rgba(255,255,255,0.25); }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.7; }
-        .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-        .sync-indicator { color: rgba(255,255,255,0.6); font-size: 10px; white-space: nowrap; }
-        .user-avatar { width: 30px; height: 30px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; flex-shrink: 0; cursor: pointer; }
+        .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; overflow: visible; padding-right: 4px; }
+        .sync-indicator { display: none; }
+        /* Спільний стиль для всіх аватарів в хедері */
+        .hdr-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; overflow: visible; flex-shrink: 0; }
+        .hdr-avatar::after { content: ''; position: absolute; bottom: -1px; left: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #1a3a5e; z-index: 10; }
+        /* Свій аватар — sync статус */
+        .user-avatar { cursor: pointer; background: var(--accent); }
+        .user-avatar::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        .user-avatar.sync-ok::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); animation: none; }
+        .user-avatar.sync-error::after { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
+        .user-avatar.sync-loading::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        /* Інші менеджери — завжди зелений */
+        .presence-dot { cursor: default; }
+        .presence-dot::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 2px; }
 
         /* MAIN LAYOUT */
         .main-layout { display: flex; min-height: calc(100vh - 52px); }
@@ -163,8 +179,10 @@
 
         /* CARDS */
         .cards-list { display: flex; flex-direction: column; gap: 8px; }
-        .lead-card { background: white; border-radius: 8px; box-shadow: var(--shadow); border-left: 4px solid var(--border); position: relative; }
+        .lead-card { background: white; border-radius: 8px; box-shadow: var(--shadow); border-left: 4px solid var(--border); position: relative; transition: background 0.5s; }
         .lead-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .lead-card.just-added { animation: highlightNew 2s ease-out; }
+        @keyframes highlightNew { 0%{background:#fef9c3;box-shadow:0 0 20px rgba(245,158,11,0.4)} 100%{background:white;box-shadow:var(--shadow)} }
         .lead-card.status-new { border-left-color: var(--warning); }
         .lead-card.status-work { border-left-color: var(--info); }
         .lead-card.status-confirmed { border-left-color: var(--success); }
@@ -298,6 +316,9 @@
         .badge-unpaid { background: #fee2e2; color: #dc2626; }
         .badge-notrip { background: #fef3c7; color: #d97706; }
         .badge-debt { background: #fee2e2; color: #dc2626; font-weight: 800; }
+        .badge-new24 { background: #fef3c7; color: #d97706; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; animation: pulse-new24 2s ease-in-out infinite; }
+        @keyframes pulse-new24 { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .new24-dot { width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-left: 6px; animation: pulse-new24 1.5s ease-in-out infinite; }
 
         /* TRIPS VIEW */
         .trips-view { display: none; }
@@ -635,6 +656,52 @@
         .toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; font-size: 11px; font-weight: 600; display: none; z-index: 3000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .toast.show { display: block; }
 
+        /* Onboarding Tutorial */
+        .ob-overlay { position: fixed; inset: 0; z-index: 9998; display: none; }
+        .ob-overlay.show { display: block; }
+        .ob-spotlight { position: fixed; z-index: 9999; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.65); transition: all 0.35s ease; pointer-events: none; }
+        .ob-tooltip { position: fixed; z-index: 10000; background: white; border-radius: 14px; padding: 14px 16px; max-width: 300px; width: calc(100vw - 32px); box-shadow: 0 8px 30px rgba(0,0,0,0.25); animation: obIn 0.3s ease; }
+        .ob-tooltip::before { content: ''; position: absolute; width: 12px; height: 12px; background: white; transform: rotate(45deg); }
+        .ob-tooltip.arrow-top::before { top: -6px; left: var(--arrow-left, 24px); }
+        .ob-tooltip.arrow-bottom::before { bottom: -6px; left: var(--arrow-left, 24px); }
+        .ob-tooltip.arrow-none::before { display: none; }
+        @keyframes obIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .ob-title { font-size: 14px; font-weight: 800; color: #1a3a5e; margin-bottom: 4px; }
+        .ob-desc { font-size: 12px; color: #64748b; line-height: 1.45; margin-bottom: 12px; }
+        .ob-footer { display: flex; align-items: center; gap: 8px; }
+        .ob-counter { font-size: 11px; color: #94a3b8; font-weight: 600; flex-shrink: 0; }
+        .ob-footer-btns { display: flex; gap: 6px; margin-left: auto; }
+        .ob-btn { padding: 8px 14px; border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .ob-btn-back { background: #f1f5f9; color: #64748b; }
+        .ob-btn-next { background: var(--primary); color: white; }
+        .ob-btn-next:active { transform: scale(0.96); }
+        /* Кнопка "Пропустити навчання" — завжди зверху */
+        .ob-skip-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 10001; display: flex; align-items: center; justify-content: center; padding: 8px; background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%); }
+        .ob-skip-btn { padding: 7px 18px; background: rgba(255,255,255,0.95); color: #475569; border: none; border-radius: 20px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .ob-skip-btn:active { transform: scale(0.96); }
+        /* Кнопка навчання у панелі входу */
+        .onboard-tutorial-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .onboard-tutorial-btn:active { transform: scale(0.97); }
+        /* Каталог категорій */
+        .ob-catalog { position: fixed; inset: 0; z-index: 9990; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .ob-catalog.show { display: flex; }
+        .ob-catalog-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9990; }
+        .ob-catalog-box { position: relative; z-index: 9991; background: white; border-radius: 20px; max-width: 380px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: obIn 0.3s ease; }
+        .ob-catalog-header { padding: 20px 20px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        .ob-catalog-header h2 { font-size: 18px; color: #1a3a5e; margin: 0 0 4px; }
+        .ob-catalog-header p { font-size: 12px; color: #94a3b8; margin: 0; }
+        .ob-catalog-close { position: absolute; top: 14px; right: 14px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; }
+        .ob-catalog-list { padding: 12px; }
+        .ob-cat { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; cursor: pointer; transition: all 0.15s; border: 1px solid #f1f5f9; margin-bottom: 8px; }
+        .ob-cat:active { transform: scale(0.98); background: #f8fafc; }
+        .ob-cat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ob-cat-info { flex: 1; min-width: 0; }
+        .ob-cat-name { font-size: 13px; font-weight: 700; color: #1e293b; }
+        .ob-cat-desc { font-size: 11px; color: #94a3b8; margin-top: 1px; }
+        .ob-cat-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; flex-shrink: 0; }
+        .ob-cat-badge.done { background: #dcfce7; color: #16a34a; }
+        .ob-cat-badge.new { background: #dbeafe; color: #2563eb; }
+
         /* Duplicate warning */
         .duplicate-warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 11px; margin-bottom: 8px; display: none; }
         .duplicate-warning.show { display: block; }
@@ -731,10 +798,12 @@
         /* === BULK TOOLBAR: панель масових дій при виборі галочок ===
            Мобільна: плаваюча панель внизу екрану
            ПК (>901px): лівий сайдбар на всю висоту, 300px шириною */
-        .bulk-toolbar { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 16px; border-radius: 12px; z-index: 90; display: none; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); font-size: 12px; font-weight: 600; max-width: 95vw; flex-direction: row; }
-        .bulk-toolbar.show { display: flex; }
+        .bulk-toolbar { position: fixed; bottom: 60px; left: 0; right: 0; background: var(--primary); color: white; padding: 10px 8px; border-radius: 0; z-index: 90; display: none; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); font-size: 12px; font-weight: 600; }
+        .bulk-toolbar.show { display: block; }
+        .bulk-toolbar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .bulk-toolbar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .bulk-toolbar-count { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-        .bulk-toolbar-btn { padding: 8px 14px; border: none; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.2s; }
+        .bulk-toolbar-btn { padding: 10px 6px; border: none; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.2s; min-height: 42px; width: 100%; text-align: center; }
         .bulk-toolbar-btn.select-all { background: rgba(255,255,255,0.2); color: white; }
         .bulk-toolbar-btn.select-all:hover { background: rgba(255,255,255,0.35); }
         .bulk-toolbar-btn.assign { background: var(--orange); color: white; }
@@ -752,18 +821,17 @@
                 left: 0;
                 top: 52px;
                 bottom: auto;
-                transform: none;
+                right: auto;
                 width: 300px;
                 max-width: 300px;
                 border-radius: 0;
-                flex-direction: column;
-                align-items: stretch;
                 padding: 16px;
-                gap: 10px;
                 height: calc(100vh - 52px);
                 box-shadow: 4px 0 20px rgba(0,0,0,0.15);
                 z-index: 160;
             }
+            .bulk-toolbar-top { flex-direction: row; margin-bottom: 12px; }
+            .bulk-toolbar-grid { grid-template-columns: 1fr; gap: 10px; }
             .bulk-toolbar-count { text-align: center; padding: 8px 12px; font-size: 13px; border-radius: 10px; }
             .bulk-toolbar-btn { padding: 12px 16px; font-size: 13px; border-radius: 10px; text-align: center; }
             .bulk-trip-dd { position: relative; bottom: auto; left: auto; margin-bottom: 0; margin-top: 6px; max-height: calc(100vh - 280px); }
@@ -874,6 +942,10 @@
                     <span class="side-menu-item-left">📊 Всі пасажири</span>
                     <span class="side-menu-item-count" id="mobileCountAll">0</span>
                 </div>
+                <div class="side-menu-item" id="mobileNew24" onclick="showPaxView('new24'); closeSideMenu();">
+                    <span class="side-menu-item-left">🆕 Нові (24 год)</span>
+                    <span class="side-menu-item-count" id="mobileCountNew24" style="background:#fef3c7;color:#d97706;">0</span>
+                </div>
                 <div class="side-menu-item" id="mobileUaEu" onclick="showPaxView('ua-eu'); closeSideMenu();">
                     <span class="side-menu-item-left"><span class="card-direction dir-badge-ua-eu" style="font-size:10px;">UA → EU</span> Україна-Європа</span>
                     <span class="side-menu-item-count" id="mobileCountUaEu">0</span>
@@ -935,8 +1007,8 @@
             <input class="search-input" type="text" id="globalSearch" placeholder="Пошук по ПІБ або телефону..." oninput="onSearchInput()">
         </div>
         <div class="header-right">
-            <span class="sync-indicator" id="syncIndicator">🔄 —</span>
-            <div class="user-avatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
+            <div class="presence-bar" id="presenceBar"></div>
+            <div class="hdr-avatar user-avatar sync-loading" id="userAvatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
         </div>
     </div>
 </header>
@@ -954,6 +1026,10 @@
                 <div class="pc-sidebar-item active" id="pcAllPax" onclick="showPaxView('all')">
                     <span><span class="item-icon">📊</span><span class="item-text">Всі</span></span>
                     <span class="item-count" id="pcCountAll">0</span>
+                </div>
+                <div class="pc-sidebar-item" id="pcNew24" onclick="showPaxView('new24')">
+                    <span><span class="item-icon">🆕</span><span class="item-text">Нові (24 год)</span></span>
+                    <span class="item-count" id="pcCountNew24" style="background:#fef3c7;color:#d97706;">0</span>
                 </div>
                 <div class="pc-sidebar-item" id="pcUaEu" onclick="showPaxView('ua-eu')">
                     <span><span class="item-icon"><span class="card-direction dir-badge-ua-eu" style="font-size:9px;padding:2px 6px;">UA→EU</span></span><span class="item-text">Україна-Європа</span></span>
@@ -1091,13 +1167,13 @@
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="bs-btn" style="background:rgba(124,58,237,0.9);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(124,58,237,0.5);" onclick="optimizeRouteOrder()">⚡ Оптимізувати порядок</button>
-                        <button class="bs-btn" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(255,255,255,0.3);" onclick="loadRoutes()">🔄 Оновити</button>
+                        <button class="bs-btn" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(255,255,255,0.3);" onclick="loadRoutes(true)">🔄 Оновити</button>
                     </div>
                 </div>
             </div>
             <div id="routeHeaderEmpty" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                 <h2 style="margin:0;font-size:18px;color:var(--text-primary);">🗺️ Маршрути</h2>
-                <button class="bs-btn" style="background:var(--primary);color:white;font-size:11px;padding:8px 14px;" onclick="loadRoutes()">🔄 Оновити</button>
+                <button class="bs-btn" style="background:var(--primary);color:white;font-size:11px;padding:8px 14px;" onclick="loadRoutes(true)">🔄 Оновити</button>
             </div>
             <!-- Route filters -->
             <div id="routeFiltersBar" style="display:none;margin-bottom:12px;">
@@ -1180,6 +1256,9 @@
                 <div style="text-align:center;font-size:10px;color:var(--text-secondary);margin-top:6px">Додати на робочий екран як додаток</div>
             </div>
         </div>
+        <div style="padding:0 16px 16px">
+            <button class="onboard-tutorial-btn" onclick="closeModal('managerModal');obOpenCatalog()">🎓 Навчання</button>
+        </div>
     </div>
 </div>
 
@@ -1194,14 +1273,19 @@
 
 <!-- COLUMN CONFIGURATOR MODAL -->
 <div class="modal-overlay" id="columnModal" onclick="if(event.target===this)closeModal('columnModal')">
-    <div class="modal" style="max-width:380px">
+    <div class="modal" style="max-width:400px">
         <div class="modal-header">
-            <div class="modal-title">⚙️ Колонки «Основне»</div>
+            <div class="modal-title">⚙️ Налаштування відображення</div>
             <button class="modal-close" onclick="closeModal('columnModal')">✕</button>
         </div>
-        <div class="modal-body" style="padding:12px">
+        <!-- Таби: Картка / Основне -->
+        <div style="display:flex;border-bottom:2px solid var(--border);background:#f8fafc">
+            <button id="cfgTabCard" onclick="switchCfgTab('card')" style="flex:1;padding:10px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary);margin-bottom:-2px">🃏 Картка</button>
+            <button id="cfgTabOsnovne" onclick="switchCfgTab('osnovne')" style="flex:1;padding:10px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-secondary);margin-bottom:-2px">👤 Основне</button>
+        </div>
+        <div class="modal-body" style="padding:12px;max-height:55vh;overflow-y:auto">
             <div class="col-cfg-section">
-                <div class="col-cfg-label">Оберіть колонки для секції «Основне»</div>
+                <div class="col-cfg-label" id="colCfgLabel">Що показувати на картці пасажира в списку</div>
                 <div class="col-cfg-list" id="colCfgList"></div>
             </div>
         </div>
@@ -1318,6 +1402,33 @@
     </div>
 </div>
 
+<!-- ONBOARDING CATALOG -->
+<div class="ob-catalog" id="obCatalog">
+    <div class="ob-catalog-bg" onclick="obCloseCatalog()"></div>
+    <div class="ob-catalog-box">
+        <button class="ob-catalog-close" onclick="obCloseCatalog()">×</button>
+        <div class="ob-catalog-header">
+            <h2>🎓 Навчання</h2>
+            <p>Оберіть тему — підсвітимо кожну кнопку</p>
+        </div>
+        <div class="ob-catalog-list" id="obCatalogList"></div>
+    </div>
+</div>
+
+<!-- ONBOARDING TUTORIAL OVERLAY -->
+<div class="ob-overlay" id="obOverlay">
+    <div class="ob-skip-bar"><button class="ob-skip-btn" onclick="obSkip()">✕ Пропустити навчання</button></div>
+    <div class="ob-spotlight" id="obSpotlight"></div>
+    <div class="ob-tooltip" id="obTooltip">
+        <div class="ob-title" id="obTitle"></div>
+        <div class="ob-desc" id="obDesc"></div>
+        <div class="ob-footer">
+            <span class="ob-counter" id="obCounter"></span>
+            <div class="ob-footer-btns" id="obBtns"></div>
+        </div>
+    </div>
+</div>
+
 <!-- CONFIRM DIALOG -->
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
@@ -1358,13 +1469,17 @@
 
 <!-- BULK TOOLBAR -->
 <div class="bulk-toolbar" id="bulkToolbar">
-    <span class="bulk-toolbar-count" id="bulkCount">0 обрано</span>
-    <button class="bulk-toolbar-btn select-all" onclick="toggleSelectAll()">☑ Вибрати всі</button>
-    <button class="bulk-toolbar-btn assign" onclick="openBulkTripDropdown(event)">🚐 Призначити рейс</button>
-    <button class="bulk-toolbar-btn route" onclick="openRouteAssignModal()">🗺️ В маршрут</button>
-    <button class="bulk-toolbar-btn optimize" onclick="bulkOptimize()">⚡ Оптимізація</button>
-    <button class="bulk-toolbar-btn" style="background:#f3f4f6;color:#6b7280;" onclick="bulkArchive()">📦 Архів</button>
-    <button class="bulk-toolbar-btn cancel" onclick="clearSelection()">✕ Скасувати</button>
+    <div class="bulk-toolbar-top">
+        <span class="bulk-toolbar-count" id="bulkCount">0 обрано</span>
+        <button class="bulk-toolbar-btn select-all" style="width:auto;padding:6px 12px;" onclick="toggleSelectAll()">☑ Вибрати всі</button>
+        <button class="bulk-toolbar-btn cancel" style="width:auto;padding:6px 12px;" onclick="clearSelection()">✕</button>
+    </div>
+    <div class="bulk-toolbar-grid">
+        <button class="bulk-toolbar-btn assign" onclick="openBulkTripDropdown(event)">🚐 Рейс</button>
+        <button class="bulk-toolbar-btn route" onclick="openRouteAssignModal()">🗺️ Маршрут</button>
+        <button class="bulk-toolbar-btn optimize" onclick="bulkOptimize()">⚡ Оптиміз.</button>
+        <button class="bulk-toolbar-btn" style="background:#f3f4f6;color:#6b7280;" onclick="bulkArchive()">📦 Архів</button>
+    </div>
     <div class="bulk-trip-dd" id="bulkTripDd"></div>
 </div>
 
@@ -1581,25 +1696,38 @@
     favicon.href = icon192;
     document.head.appendChild(favicon);
 
-    // Web App Manifest (inline data URI)
-    var manifest = {
-        name: 'GrescoBus CRM',
-        short_name: 'GrescoBus',
-        description: 'CRM Пасажири — GrescoBus',
-        start_url: location.href,
-        display: 'standalone',
-        orientation: 'portrait',
-        theme_color: '#1a3a5e',
-        background_color: '#f5f7fa',
-        icons: [
-            { src: icon192, sizes: '192x192', type: 'image/png' },
-            { src: icon512, sizes: '512x512', type: 'image/png' }
-        ]
-    };
+    // Web App Manifest — спочатку пробуємо файл, fallback на inline
     var manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
-    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    // Перевіряємо чи manifest.json доступний
+    fetch('manifest.json', { method: 'HEAD' }).then(function(r) {
+        if (r.ok) {
+            manifestLink.href = 'manifest.json';
+        } else {
+            throw new Error('no file');
+        }
+    }).catch(function() {
+        // Fallback — inline manifest (для Google Apps Script)
+        var m = {
+            name: 'GrescoBus CRM', short_name: 'GrescoBus',
+            description: 'CRM Пасажири — GrescoBus',
+            start_url: location.href, display: 'standalone',
+            orientation: 'portrait', theme_color: '#1a3a5e', background_color: '#f5f7fa',
+            icons: [
+                { src: icon192, sizes: '192x192', type: 'image/png' },
+                { src: icon512, sizes: '512x512', type: 'image/png' }
+            ]
+        };
+        manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m));
+    });
     document.head.appendChild(manifestLink);
+
+    // Service Worker — реєструємо якщо доступний
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function() {
+            // SW недоступний (напр. Google Apps Script) — ігноруємо
+        });
+    }
 })();
 
 // PWA Install prompt
@@ -1663,7 +1791,7 @@ function initMapsAPI() {
 // ================================================================
 // CONFIG
 // ================================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxat2FxKeugbYctEvwSD_VqSBhSHZm9kEQSkFszNhEiHlYZ8LebmSo3Vl-O0bgC9bgd2g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzFXPSdRiZSwIfNHp4lnGle3TMhj2GUMUZn6LNlnh3HDNBgrfHlwtt6mkA0k6cddaI60g/exec';
 const COL_MAP = {
     pax_id:'PAX_ID', smartId:'Ід_смарт', direction:'Напрям', sourceSheet:'SOURCE_SHEET',
     dateCreated:'Дата створення', name:'Піб', phone:'Телефон пасажира',
@@ -1680,6 +1808,25 @@ const COL_MAP = {
     calId:'CAL_ID'
 };
 const DEFAULT_OSNOVNE_FIELDS = ['name','phone','phoneReg','direction','date','seats'];
+// Поля які можна показати/сховати на картці
+const CARD_FIELD_OPTIONS = [
+    { key:'direction', label:'Напрям (UA→EU / EU→UA)' },
+    { key:'phone', label:'Телефон пасажира' },
+    { key:'seats', label:'Кількість місць' },
+    { key:'date', label:'Дата виїзду' },
+    { key:'price', label:'Ціна + валюта' },
+    { key:'deposit', label:'Завдаток' },
+    { key:'name', label:'ПІБ' },
+    { key:'smartId', label:'SmartSender ID' },
+    { key:'pax_id', label:'PAX_ID' },
+    { key:'route', label:'Маршрут (від → до)' },
+    { key:'tripDate', label:'Дата рейсу' },
+    { key:'dateCreated', label:'Дата реєстрації' },
+    { key:'leadStatus', label:'Статус ліда (бейдж)' },
+    { key:'payStatus', label:'Статус оплати (бейдж)' },
+    { key:'debt', label:'Борг (бейдж)' }
+];
+const DEFAULT_CARD_FIELDS = ['direction','phone','seats','date','price','deposit','name','pax_id','smartId','route','leadStatus','payStatus','debt'];
 const OTHER_SECTIONS = [
     { key:'route', title:'🗺️ Маршрут', fields:['from','to','timing','vehicle','seatInCar','calId'] },
     { key:'finance', title:'💰 Фінанси', fields:['price','currency','deposit','currencyDeposit','weight','weightPrice','currencyWeight','debt'] },
@@ -1691,6 +1838,14 @@ const OTHER_SECTIONS = [
 function getManagerColsKey() {
     var name = getManagerName() || 'default';
     return 'gresco_cols_' + name.replace(/\s+/g, '_');
+}
+function getManagerCardKey() {
+    var name = getManagerName() || 'default';
+    return 'gresco_card_' + name.replace(/\s+/g, '_');
+}
+function getCardFields() {
+    try { var s = localStorage.getItem(getManagerCardKey()); if (s) return JSON.parse(s); } catch(e) {}
+    return DEFAULT_CARD_FIELDS;
 }
 function getOsnovneFields() {
     try { var s = localStorage.getItem(getManagerColsKey()); if (s) return JSON.parse(s); } catch(e) {}
@@ -1741,6 +1896,7 @@ let tripDateFilter = '';
 let tripAutoFilter = 'all';
 let openDetailsId = null;
 let openActionsId = null;
+let justAddedPaxId = null; // ID щойно доданого ліда (для підсвітки)
 let activeDetailTab = {}; // { paxId: sectionKey } — зберігає активну вкладку деталей
 let selectedIds = new Set();
 let editingField = null;
@@ -1820,6 +1976,7 @@ function selectManager(idx) {
     setManagerName(slots[idx]);
     closeModal('managerModal');
     showToast('Вхід: ' + slots[idx]);
+    checkOnboardingAutoStart();
 }
 
 function renameManager(idx) {
@@ -1830,13 +1987,16 @@ function renameManager(idx) {
         var oldKey = 'gresco_cols_' + oldName.replace(/\s+/g, '_');
         slots[idx] = newName.trim();
         saveManagerSlots(slots);
-        // Мігруємо налаштування колонок на нове ім'я
-        var oldCols = localStorage.getItem(oldKey);
-        if (oldCols) {
-            var newKey = 'gresco_cols_' + newName.trim().replace(/\s+/g, '_');
-            localStorage.setItem(newKey, oldCols);
-            localStorage.removeItem(oldKey);
-        }
+        // Мігруємо налаштування на нове ім'я
+        var newSuffix = newName.trim().replace(/\s+/g, '_');
+        var oldSuffix = oldName.replace(/\s+/g, '_');
+        ['gresco_cols_', 'gresco_card_'].forEach(function(prefix) {
+            var oldData = localStorage.getItem(prefix + oldSuffix);
+            if (oldData) {
+                localStorage.setItem(prefix + newSuffix, oldData);
+                localStorage.removeItem(prefix + oldSuffix);
+            }
+        });
         // Якщо перейменовуємо активного — оновити активне ім'я
         if (getManagerName() === oldName) {
             setManagerName(newName.trim());
@@ -1851,21 +2011,121 @@ function openManagerModal() {
 }
 
 // ================================================================
+// PRESENCE — онлайн-статус менеджерів
+// ================================================================
+var HEARTBEAT_INTERVAL = 30000; // 30 сек
+var PRESENCE_CHECK_INTERVAL = 30000; // 30 сек
+var _heartbeatTimer = null;
+var _presenceTimer = null;
+
+function startPresence() {
+    sendHeartbeat();
+    fetchOnlineManagers();
+    _heartbeatTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+    _presenceTimer = setInterval(fetchOnlineManagers, PRESENCE_CHECK_INTERVAL);
+}
+
+function getDeviceInfo() {
+    var ua = navigator.userAgent || '';
+    var device = 'Desktop';
+    var os = 'Unknown';
+    var browser = 'Unknown';
+
+    // OS
+    if (/iPhone/.test(ua)) { device = 'iPhone'; os = 'iOS'; }
+    else if (/iPad/.test(ua)) { device = 'iPad'; os = 'iOS'; }
+    else if (/Android/.test(ua)) {
+        os = 'Android';
+        device = /Mobile/.test(ua) ? 'Android Phone' : 'Android Tablet';
+    }
+    else if (/Mac OS/.test(ua)) { os = 'macOS'; }
+    else if (/Windows/.test(ua)) { os = 'Windows'; }
+    else if (/Linux/.test(ua)) { os = 'Linux'; }
+
+    // Browser
+    if (/CriOS|Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
+    else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+    else if (/Firefox|FxiOS/.test(ua)) browser = 'Firefox';
+    else if (/Edg/.test(ua)) browser = 'Edge';
+    else if (/Opera|OPR/.test(ua)) browser = 'Opera';
+
+    // PWA mode
+    var isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+    return { device: device, os: os, browser: browser, pwa: !!isPWA };
+}
+
+function sendHeartbeat() {
+    var name = getManagerName();
+    if (!name) return;
+    var devInfo = getDeviceInfo();
+    apiPost('heartbeat', { manager: name, device: devInfo.device, os: devInfo.os, browser: devInfo.browser, pwa: devInfo.pwa }).catch(function() {});
+}
+
+function fetchOnlineManagers() {
+    apiPost('getOnlineManagers', {}).then(function(res) {
+        if (res.ok) renderPresenceBar(res.managers || []);
+    }).catch(function() {});
+}
+
+function renderPresenceBar(managers) {
+    var bar = document.getElementById('presenceBar');
+    if (!bar) return;
+    var myName = getManagerName();
+    var colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+    // Показуємо інших менеджерів (не себе)
+    var others = managers.filter(function(m) { return m.name !== myName; });
+
+    if (others.length === 0) {
+        bar.innerHTML = '';
+        return;
+    }
+
+    bar.innerHTML = others.map(function(m, i) {
+        var initials = m.name.trim().split(/\s+/).map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
+        var color = colors[i % colors.length];
+        var deviceIcon = '';
+        if (m.device) {
+            if (m.device.indexOf('iPhone') >= 0 || m.device.indexOf('Android Phone') >= 0) deviceIcon = '\uD83D\uDCF1';
+            else if (m.device.indexOf('iPad') >= 0 || m.device.indexOf('Tablet') >= 0) deviceIcon = '\uD83D\uDCBB';
+            else deviceIcon = '\uD83D\uDDA5\uFE0F';
+        }
+        var title = m.name + ' — онлайн' + (m.device ? '\n' + deviceIcon + ' ' + m.device : '');
+        return '<div class="hdr-avatar presence-dot" style="background:' + color + '" title="' + title + '">' +
+            initials + '</div>';
+    }).join('');
+}
+
+// Запускаємо після завантаження
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(startPresence, 2000);
+});
+
+// ================================================================
 // API
 // ================================================================
+var _apiActiveRequests = 0;
+
 async function apiPost(action, data) {
     if (!API_URL) {
         showToast('⚠️ API_URL не налаштовано');
         return { ok: false, error: 'No API URL' };
     }
+    _apiActiveRequests++;
+    if (_apiActiveRequests === 1) setSyncStatus('loading');
     try {
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action, ...data })
+            body: JSON.stringify({ action, manager: getManagerName(), ...data })
         });
+        _apiActiveRequests = Math.max(0, _apiActiveRequests - 1);
+        if (_apiActiveRequests === 0) setSyncStatus('ok');
         return await res.json();
     } catch (e) {
+        _apiActiveRequests = Math.max(0, _apiActiveRequests - 1);
+        setSyncStatus('error');
         console.error('API error:', e);
         showToast('❌ Помилка мережі');
         return { ok: false, error: e.message };
@@ -1901,16 +2161,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => { hideLoader(); render(); });
 
     setInterval(silentSync, 60000);
+
+    // Автозапуск навчання якщо вже залогінений і ще не проходив
+    checkOnboardingAutoStart();
 });
 
 // ================================================================
 // SILENT SYNC
 // ================================================================
-function silentSync(manual) {
+function silentSync(manual, force) {
     if (manual) {
         // Ручна синхронізація — повна з лоадером та архівом
         showLoader('🔄 Синхронізація всіх даних...');
-        Promise.all([
+        return Promise.all([
             apiPost('getAll', { sheet: 'all' }),
             apiPost('getTrips', { filter: {} }),
             apiPost('getRoutesList', {}),
@@ -1946,19 +2209,30 @@ function silentSync(manual) {
             hideLoader();
             showToast('❌ Помилка синхронізації: ' + (e.message || 'мережа'));
         });
-        return;
     }
 
     // Автоматична тиха синхронізація (без лоадера)
-    if (document.querySelector('.modal-overlay.show')) return;
-    if (document.querySelector('.bottom-sheet-overlay.show')) return;
+    // Якщо не await-режим — пропускаємо коли відкрита модалка
+    if (!manual && !force && document.querySelector('.modal-overlay.show')) return Promise.resolve();
+    if (!manual && !force && document.querySelector('.bottom-sheet-overlay.show')) return Promise.resolve();
 
-    Promise.all([
+    return Promise.all([
         apiPost('getAll', { sheet: 'all' }),
         apiPost('getTrips', { filter: {} }),
         apiPost('getRoutesList', {})
     ]).then(([paxRes, tripRes, routeRes]) => {
-        if (paxRes.ok) { passengers = paxRes.data; applyOptimizedOrder(); }
+        if (paxRes.ok) {
+            passengers = paxRes.data;
+            applyOptimizedOrder();
+            // Якщо щойно додали ліда — тримаємо його зверху
+            if (justAddedPaxId) {
+                const idx = passengers.findIndex(p => p['PAX_ID'] === justAddedPaxId);
+                if (idx > 0) {
+                    const [pax] = passengers.splice(idx, 1);
+                    passengers.unshift(pax);
+                }
+            }
+        }
         if (tripRes.ok) trips = tripRes.data;
         if (routeRes.ok && routeRes.data) {
             var newList = routeRes.data;
@@ -1985,10 +2259,15 @@ function silentSync(manual) {
 }
 
 function updateSyncTime() {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    document.getElementById('syncIndicator').textContent = '🔄 ' + h + ':' + m;
+    setSyncStatus('ok');
+}
+
+function setSyncStatus(status) {
+    const avatar = document.getElementById('userAvatar');
+    if (avatar) {
+        avatar.classList.remove('sync-ok', 'sync-error', 'sync-loading');
+        avatar.classList.add('sync-' + status);
+    }
 }
 
 // ================================================================
@@ -2032,7 +2311,7 @@ function showRoutesView() {
     else renderRoutes();
 }
 
-async function loadRoutes() {
+async function loadRoutes(forceRefresh) {
     const loading = document.getElementById('routesLoading');
     const errEl = document.getElementById('routesError');
     const list = document.getElementById('routesList');
@@ -2043,7 +2322,7 @@ async function loadRoutes() {
 
     try {
         // ШВИДКИЙ запит: тільки імена аркушів + кількість рядків
-        const res = await apiPost('getRoutesList', {});
+        const res = await apiPost('getRoutesList', { forceRefresh: !!forceRefresh });
         loading.style.display = 'none';
         if (res.ok && res.data) {
             // Зберігаємо список аркушів (rows ще не завантажені)
@@ -2290,7 +2569,7 @@ function renderRouteCard(r, idx, sheetName) {
     const rteId = r['RTE_ID'] || '';
     const type = r['Тип запису'] || '';
     const name = r['Піб пасажира'] || '—';
-    const phone = r['Телефон пасажира'] || '—';
+    const phone = String(r['Телефон пасажира'] || '—');
     const date = r['Дата рейсу'] || '';
     const direction = r['Напрям'] || '';
     const auto = r['Номер авто'] || '';
@@ -2783,7 +3062,7 @@ function promptDeleteLinkedSheets(baseName) {
 }
 
 function updatePcSidebarActive() {
-    ['pcAllPax','pcUaEu','pcEuUa','pcTrips','pcArchive'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    ['pcAllPax','pcNew24','pcUaEu','pcEuUa','pcTrips','pcArchive'].forEach(id => document.getElementById(id)?.classList.remove('active'));
     document.querySelectorAll('.route-sidebar-item').forEach(el => el.classList.remove('active'));
     if (currentView === 'archive') {
         document.getElementById('pcArchive')?.classList.add('active');
@@ -2792,19 +3071,19 @@ function updatePcSidebarActive() {
     } else if (currentView === 'trips') {
         document.getElementById('pcTrips')?.classList.add('active');
     } else {
-        const map = { all:'pcAllPax', 'ua-eu':'pcUaEu', 'eu-ua':'pcEuUa' };
+        const map = { all:'pcAllPax', new24:'pcNew24', 'ua-eu':'pcUaEu', 'eu-ua':'pcEuUa' };
         document.getElementById(map[currentDir] || 'pcAllPax')?.classList.add('active');
     }
 }
 
 function updateMobileSidebarActive() {
-    ['mobileAllPax','mobileUaEu','mobileEuUa','mobileTrips'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    ['mobileAllPax','mobileNew24','mobileUaEu','mobileEuUa','mobileTrips'].forEach(id => document.getElementById(id)?.classList.remove('active'));
     if (currentView === 'routes') {
         // active стан через openRoute
     } else if (currentView === 'trips') {
         document.getElementById('mobileTrips')?.classList.add('active');
     } else {
-        const map = { all:'mobileAllPax', 'ua-eu':'mobileUaEu', 'eu-ua':'mobileEuUa' };
+        const map = { all:'mobileAllPax', new24:'mobileNew24', 'ua-eu':'mobileUaEu', 'eu-ua':'mobileEuUa' };
         document.getElementById(map[currentDir] || 'mobileAllPax')?.classList.add('active');
     }
 }
@@ -2821,18 +3100,94 @@ function updateAllCounts() {
     const uaeu = allPax.filter(p => isDir(p, 'ua-eu'));
     const euua = allPax.filter(p => isDir(p, 'eu-ua'));
 
+    const new24 = allPax.filter(p => isNew24h(p));
+
     setCount('pcCountAll', allPax.length);
+    setCount('pcCountNew24', new24.length);
     setCount('pcCountUaEu', uaeu.length);
     setCount('pcCountEuUa', euua.length);
     setCount('pcCountTrips', trips.length);
     setCount('pcCountArchive', archivedPassengers.length);
     setCount('mobileCountAll', allPax.length);
+    setCount('mobileCountNew24', new24.length);
     setCount('mobileCountUaEu', uaeu.length);
     setCount('mobileCountEuUa', euua.length);
     setCount('mobileCountTrips', trips.length);
+
+    // PWA Badge: лічильник на іконці додатку
+    updateAppBadge(new24.length);
 }
 
 function setCount(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; }
+
+// PWA App Badge — показує лічильник на іконці додатку на телефоні
+function updateAppBadge(count) {
+    // 1. navigator.setAppBadge — працює на Android (Chrome PWA) та десктоп
+    if ('setAppBadge' in navigator) {
+        if (count > 0) {
+            navigator.setAppBadge(count).catch(() => {});
+        } else {
+            navigator.clearAppBadge().catch(() => {});
+        }
+    }
+    // 2. Оновлюємо title сторінки — видно в табах і на деяких платформах
+    const baseTitle = 'GrescoBus CRM';
+    document.title = count > 0 ? '(' + count + ') ' + baseTitle : baseTitle;
+
+    // 3. Динамічний favicon з лічильником (працює скрізь)
+    if (count > 0) {
+        updateFaviconBadge(count);
+    } else {
+        restoreOriginalFavicon();
+    }
+}
+
+// Малюємо червоний кружок з числом на favicon
+let _originalFaviconHref = null;
+function updateFaviconBadge(count) {
+    const link = document.querySelector('link[rel="icon"]');
+    if (!link) return;
+    if (!_originalFaviconHref) _originalFaviconHref = link.href;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        const size = 64;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, size, size);
+
+        // Червоний кружок
+        const r = size * 0.28;
+        const cx = size - r - 2;
+        const cy = r + 2;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.fillStyle = '#dc2626';
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Число
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold ' + (r * 1.3) + 'px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count > 99 ? '99+' : String(count), cx, cy + 1);
+
+        link.href = c.toDataURL('image/png');
+    };
+    img.src = _originalFaviconHref;
+}
+
+function restoreOriginalFavicon() {
+    if (_originalFaviconHref) {
+        const link = document.querySelector('link[rel="icon"]');
+        if (link) link.href = _originalFaviconHref;
+    }
+}
 
 // Перевірка напрямку пасажира.
 // ВАЖЛИВО: використовуємо startsWith замість includes, бо "Україна-Європа"
@@ -2846,6 +3201,17 @@ function isDir(p, dir) {
     if (dir === 'ua-eu') return startsUA;
     if (dir === 'eu-ua') return startsEU;
     return true;
+}
+
+// ================================================================
+// NEW 24H HELPER
+// ================================================================
+function isNew24h(p) {
+    const raw = p['Дата створення'];
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return false;
+    return (Date.now() - d.getTime()) < 24 * 60 * 60 * 1000;
 }
 
 // ================================================================
@@ -2866,7 +3232,8 @@ function getFilteredPassengers() {
 
     return passengers.filter(p => {
         if ((p['Статус CRM'] || 'Активний') === 'Архів') return false;
-        if (currentDir !== 'all' && !isDir(p, currentDir)) return false;
+        if (currentDir === 'new24') { if (!isNew24h(p)) return false; }
+        else if (currentDir !== 'all' && !isDir(p, currentDir)) return false;
         if (leadStatus !== 'all' && p['Статус ліда'] !== leadStatus) return false;
         if (payStatus !== 'all' && p['Статус оплати'] !== payStatus) return false;
         if (tripFilter === 'none' && p['CAL_ID']) return false;
@@ -2918,7 +3285,8 @@ function renderCard(p) {
     const isUaEu = dirCode === 'ua-eu';
     const dirLabel = isUaEu ? 'UA → EU' : 'EU → UA';
     const dirColorClass = isUaEu ? 'dir-badge-ua-eu' : 'dir-badge-eu-ua';
-    const phone = p['Телефон пасажира'] || '';
+    const phone = String(p['Телефон пасажира'] || '');
+    const cleanPhone = phone.replace(/[^+\d]/g, '');
     const seats = p['Кількість місць'] || 1;
     const date = formatTripDate(p['Дата виїзду'] || '');
     const price = p['Ціна квитка'] || '';
@@ -2941,6 +3309,7 @@ function renderCard(p) {
     const debt = Math.max(0, priceN + wpN - depN);
 
     const statusClass = leadStatus === 'Новий' ? 'status-new' : leadStatus === 'В роботі' ? 'status-work' : leadStatus === 'Підтверджено' ? 'status-confirmed' : leadStatus === 'Відмова' ? 'status-refused' : '';
+    const isRecent24h = isNew24h(p);
     const isOpen = openDetailsId === id;
     const isActionsOpen = openActionsId === id;
 
@@ -2996,7 +3365,10 @@ function renderCard(p) {
         if (trip) tripDateStr = formatTripDate(trip.date);
     }
 
-    return `<div class="lead-card ${statusClass} ${selectedIds.has(id)?'selected':''}">
+    var cf = getCardFields();
+    const justAddedClass = justAddedPaxId === id ? 'just-added' : '';
+
+    return `<div class="lead-card ${statusClass} ${selectedIds.has(id)?'selected':''} ${justAddedClass}" data-pax-id="${id}">
         <div class="card-header" onclick="smartToggleDetails(event, '${id}')">
             <div class="card-header-top">
                 <div class="card-checkbox-wrap" onclick="event.stopPropagation()">
@@ -3004,28 +3376,28 @@ function renderCard(p) {
                 </div>
                 <div class="card-body">
                     <div class="card-top-row">
-                        <span class="card-direction ${dirColorClass}">${dirLabel}</span>
-                        <span class="card-phone">${phone}</span>
-                        <span class="card-seats">${seats}м</span>
-                        <span class="card-date">${date || '—'}</span>
-                        <div class="card-price-wrap">
-                            <span class="card-price">${price ? price + ' ' + curr : '—'}</span>
-                            <span class="card-deposit ${depN > 0 ? 'has-deposit' : ''}">${depN > 0 ? 'завд: ' + depN + ' ' + (p['Валюта завдатку'] || curr) : 'без завдатку'}</span>
-                        </div>
+                        ${cf.includes('direction') ? `<span class="card-direction ${dirColorClass}">${dirLabel}</span>` : ''}
+                        ${cf.includes('phone') ? `<span class="card-phone">${phone}</span>` : ''}
+                        ${cf.includes('seats') ? `<span class="card-seats">${seats}м</span>` : ''}
+                        ${cf.includes('date') ? `<span class="card-date">${date || '—'}</span>` : ''}
+                        ${cf.includes('price') || cf.includes('deposit') ? `<div class="card-price-wrap">
+                            ${cf.includes('price') ? `<span class="card-price">${price ? price + ' ' + curr : '—'}</span>` : ''}
+                            ${cf.includes('deposit') ? `<span class="card-deposit ${depN > 0 ? 'has-deposit' : ''}">${depN > 0 ? 'завд: ' + depN + ' ' + (p['Валюта завдатку'] || curr) : 'без завдатку'}</span>` : ''}
+                        </div>` : ''}
                     </div>
                     <div class="card-row2-wrap">
                         <div class="card-info-row">
-                            <span class="card-id">${id}</span>
-                            <span class="card-smart-id">SS: ${smartId || '—'}</span>
-                            <span class="card-name">${name}</span>
-                            ${lsBadge} ${payBadge}
-                            ${debt > 0 ? '<span class="badge badge-debt">Борг: '+debt+'</span>' : ''}
+                            ${cf.includes('pax_id') ? `<span class="card-id">${id}</span>` : ''}
+                            ${cf.includes('smartId') ? `<span class="card-smart-id">SS: ${smartId || '—'}</span>` : ''}
+                            ${cf.includes('name') ? `<span class="card-name">${name}</span>` : ''}
+                            ${isRecent24h ? '<span class="badge badge-new24">🆕 NEW</span>' : ''}
+                            ${cf.includes('leadStatus') ? lsBadge : ''} ${cf.includes('payStatus') ? payBadge : ''}
+                            ${cf.includes('debt') && debt > 0 ? '<span class="badge badge-debt">Борг: '+debt+'</span>' : ''}
                         </div>
-                        ${routeHtml} <!-- Маршрут: від → до -->
-                        <!-- Мета-рядок: дата рейсу, дата реєстрації, SmartSender ID -->
+                        ${cf.includes('route') ? routeHtml : ''}
                         <div class="card-meta-row">
-                            ${tripDateStr ? '<span class="card-meta-tag">🗓 Рейс: '+tripDateStr+'</span>' : ''}
-                            ${dateCreated && dateCreated !== '—' ? '<span class="card-meta-tag">📅 Реєстр: '+dateCreated+'</span>' : ''}
+                            ${cf.includes('tripDate') && tripDateStr ? '<span class="card-meta-tag">🗓 Рейс: '+tripDateStr+'</span>' : ''}
+                            ${cf.includes('dateCreated') && dateCreated && dateCreated !== '—' ? '<span class="card-meta-tag">📅 Реєстр: '+dateCreated+'</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -3039,8 +3411,8 @@ function renderCard(p) {
         <div class="card-details ${isOpen?'show':''}" id="details-${id}">${isOpen ? renderDetails(p) : ''}</div>
         <!-- === ПАНЕЛЬ ДІЙ ЛІДА: 4 кнопки в ряд (flex). Показується при ▼ === -->
         <div class="card-actions ${isActionsOpen?'show':''}" id="actions-${id}">
-            <button class="btn-card-action btn-call" onclick="window.open('tel:${phone}')">📞 Дзвінок</button>
-            <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${phone}','${smartId}')">✉️ Писати</button>
+            <button class="btn-card-action btn-call" onclick="window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
+            <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
             <button class="btn-card-action btn-edit" onclick="event.stopPropagation(); openEditPax('${id}')">✏️ Редагувати</button>
             <button class="btn-card-action" style="background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); toggleTripAssignDD('${id}')">🚐 Рейс</button>
             <button class="btn-card-action" style="background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archivePax('${id}','${name}')">📦 Архів</button>
@@ -3269,6 +3641,13 @@ function toggleDetails(id) {
         openDetailsId = id;
         const p = passengers.find(x => x['PAX_ID'] === id);
         if (p) {
+            // При відкритті деталей — знімаємо статус "Новий" → "В роботі"
+            if (p['Статус ліда'] === 'Новий') {
+                p['Статус ліда'] = 'В роботі';
+                const sheet = p._sheet || '';
+                apiPost('updatePassenger', { pax_id: id, sheet, data: { leadStatus: 'В роботі' } });
+                updateAllCounts();
+            }
             const el = document.getElementById('details-' + id);
             if (el) el.innerHTML = renderDetails(p);
         }
@@ -3584,12 +3963,12 @@ function parseSmsText() {
 
     // 2. Телефон: міжнародні (+41.., +49.., +380..) та українські (0XX..., 380...)
     let phone = '';
-    // Міжнародний формат: +XX... (від 9 до 15 цифр, можливі пробіли/тире)
-    const intlMatch = raw.match(/(\+[\d\s\-]{9,18})/);
+    // Міжнародний формат: +XX... (від 9 до 15 цифр, можливі пробіли/тире/дужки)
+    const intlMatch = raw.match(/(\+[\d\s\-()]{9,22})/);
     // Український формат: 0XXXXXXXXX або 380XXXXXXXXX
     const uaMatch = raw.match(/(?<!\d)\+?3?8?(0\d{9})(?!\d)/);
     if (intlMatch) {
-        phone = intlMatch[1].replace(/[\s\-]/g, '');
+        phone = intlMatch[1].replace(/[\s\-()]/g, '');
     } else if (uaMatch) {
         phone = '+380' + uaMatch[1].slice(1);
     }
@@ -3891,12 +4270,14 @@ async function savePassenger() {
                 p['Валюта багажу'] = formData.currencyWeight;
                 p['Примітка'] = formData.note;
             }
+            // Одразу закриваємо і рендеримо — дані вже оновлені локально
             hideLoader();
-            showToast('✅ Пасажира оновлено');
             editingPaxId = null;
             closeModal('passengerModal');
             render();
-            silentSync();
+            showToast('✅ Пасажира оновлено');
+            // Фонова синхронізація
+            silentSync(false, true);
         } else {
             hideLoader();
             showToast('❌ ' + (res.error || 'Помилка збереження'));
@@ -3905,21 +4286,38 @@ async function savePassenger() {
         return;
     }
 
-    // CREATE MODE — duplicate check
-    const dupRes = await apiPost('checkDuplicates', { sheet: dir === 'eu-ua' ? 'eu' : 'ue', pib: name, phone, date });
-    if (dupRes.exact) {
-        const w = document.getElementById('duplicateWarning');
-        w.className = 'duplicate-warning show exact';
-        w.textContent = '❌ Точний дублікат! ' + dupRes.match.pib + ' ' + dupRes.match.phone;
+    // CREATE MODE — локальна перевірка дублікатів (надійніша за API)
+    const nameLower = name.toLowerCase().trim();
+    const phoneDigits = phone.replace(/\D/g, ''); // тільки цифри
+    // Також перевіряємо останні 9 цифр (без коду країни)
+    const phoneTail = phoneDigits.length >= 9 ? phoneDigits.slice(-9) : phoneDigits;
+    let localExact = null, localSoft = null;
+    for (const p of passengers) {
+        const pName = String(p['Піб'] || '').toLowerCase().trim();
+        const pDigits = String(p['Телефон пасажира'] || '').replace(/\D/g, '');
+        const pTail = pDigits.length >= 9 ? pDigits.slice(-9) : pDigits;
+        const pDate = String(p['Дата виїзду'] || '').trim();
+        const phoneMatch = phoneTail && pTail && (phoneDigits === pDigits || phoneTail === pTail);
+        if (pName === nameLower && phoneMatch && pDate === date && nameLower && date) {
+            localExact = p; break;
+        }
+        if (!localSoft && pName === nameLower && phoneMatch && nameLower) {
+            localSoft = p;
+        }
+    }
+    if (localExact) {
         saveBtn.disabled = false; saveBtn.textContent = origText; saveBtn.style.opacity = '';
+        showConfirm('❌ Точний дублікат!\n\n' + localExact['Піб'] + '\n' + localExact['Телефон пасажира'] + '\n\nТакий запис вже існує. Скасувати?', function(yes) {});
         return;
     }
-    if (dupRes.soft) {
-        const w = document.getElementById('duplicateWarning');
-        w.className = 'duplicate-warning show';
-        w.textContent = '⚠️ Схожий запис: ' + dupRes.match.pib + ' ' + dupRes.match.phone + '. Зберегти все одно?';
-        // Allow save on second click
-        if (w.dataset.confirmed !== 'yes') { w.dataset.confirmed = 'yes'; saveBtn.disabled = false; saveBtn.textContent = origText; saveBtn.style.opacity = ''; return; }
+    if (localSoft) {
+        const confirmed = await new Promise(resolve => {
+            showConfirm('⚠️ Схожий запис знайдено!\n\n' + localSoft['Піб'] + '\n' + localSoft['Телефон пасажира'] + '\n\nЗберегти все одно?', resolve);
+        });
+        if (!confirmed) {
+            saveBtn.disabled = false; saveBtn.textContent = origText; saveBtn.style.opacity = '';
+            return;
+        }
     }
 
     showLoader('Збереження...');
@@ -3928,18 +4326,60 @@ async function savePassenger() {
         data: formData
     });
     if (res.ok) {
-        // Якщо менеджер обрав рейс з suggest панелі — призначаємо
+        // Оптимістичне оновлення — одразу додаємо ліда в локальний масив
+        const newPax = {
+            'PAX_ID': res.pax_id,
+            'Піб': name,
+            'Телефон пасажира': phone,
+            'Телефон реєстратора': formData.phoneReg,
+            'Кількість місць': formData.seats,
+            'Адреса відправки': formData.from,
+            'Адреса прибуття': formData.to,
+            'Дата виїзду': date,
+            'Таймінг': formData.timing,
+            'Ціна квитка': formData.price,
+            'Валюта квитка': formData.currency,
+            'Завдаток': formData.deposit,
+            'Валюта завдатку': formData.currencyDeposit,
+            'Вага багажу': formData.weight,
+            'Ціна багажу': formData.weightPrice,
+            'Валюта багажу': formData.currencyWeight,
+            'Примітка': formData.note,
+            'Напрям': dir === 'eu-ua' ? 'Європа-Україна' : 'Україна-Європа',
+            'Статус ліда': 'Новий',
+            'Статус оплати': 'Не оплачено',
+            'Статус CRM': 'Активний',
+            'Дата створення': new Date().toISOString(),
+            'CAL_ID': selectedFormCalId || '',
+            _sheet: dir === 'eu-ua' ? 'eu' : 'ue'
+        };
+        passengers.unshift(newPax);
+
+        // Призначаємо рейс паралельно (не чекаємо)
         if (selectedFormCalId) {
-            await apiPost('assignTrip', { cal_id: selectedFormCalId, pax_ids: [res.pax_id] });
-            hideLoader();
-            showToast('✅ Пасажир додано + призначено рейс');
-        } else {
-            hideLoader();
-            showToast('✅ Пасажир додано: ' + res.pax_id);
+            apiPost('assignTrip', { cal_id: selectedFormCalId, pax_ids: [res.pax_id] });
         }
         selectedFormCalId = '';
+
+        // Одразу закриваємо модалку і показуємо ліда зверху
+        hideLoader();
         closeModal('passengerModal');
-        silentSync();
+        justAddedPaxId = res.pax_id;
+        updateAllCounts();
+        render();
+
+        // Скрол до нового ліда + підсвітка
+        setTimeout(() => {
+            const el = document.querySelector('[data-pax-id="' + res.pax_id + '"]');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Прибираємо підсвітку через 3 секунди
+            setTimeout(() => { justAddedPaxId = null; }, 3000);
+        }, 100);
+
+        showToast('✅ Пасажир додано: ' + res.pax_id);
+
+        // Фонова синхронізація — підтягне точні дані з сервера
+        silentSync(false, true);
     } else {
         hideLoader();
         showToast('❌ ' + (res.error || 'Помилка'));
@@ -4320,7 +4760,7 @@ function renderPaxPopup(tripPax, title, maxSeats) {
     } else {
         tripPax.forEach(p => {
             const name = p['Піб'] || 'Без імені';
-            const phone = p['Телефон пасажира'] || '';
+            const phone = String(p['Телефон пасажира'] || '');
             const seats = parseInt(p['Кількість місць']) || 1;
             const status = p['Статус ліда'] || '';
             const statusCls = status === 'Підтверджено' ? 'color:#059669' : status === 'Відмова' ? 'color:#dc2626' : status === 'В роботі' ? 'color:#d97706' : 'color:#6b7280';
@@ -4958,11 +5398,9 @@ function deleteTrip(calId, city, date) {
         showLoader('Видалення рейсу...');
         var res = await apiPost('deleteTrip', { cal_id: calId });
         if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || 'Невідома помилка')); return; }
-        // Після API — оновлюємо дані з сервера перш ніж показати результат
-        var tripRes = await apiPost('getTrips', { filter: {} });
-        if (tripRes.ok) trips = tripRes.data;
-        renderTrips();
-        updateAllCounts();
+        // Чекаємо поки дані реально оновляться перед показом результату
+        showLoader('⏳ Оновлення списку...');
+        await silentSync(false, true);
         hideLoader();
         showToast('✅ Рейс видалено');
     });
@@ -5134,62 +5572,88 @@ function getAllColumnKeys() {
     return Object.keys(COL_MAP);
 }
 
+var cfgActiveTab = 'card'; // 'card' | 'osnovne'
+var cardCfgTemp = [];
+
 function openColumnConfigurator() {
+    cfgActiveTab = 'card';
     colCfgTemp = [...getOsnovneFields()];
-    renderColumnConfigurator();
+    cardCfgTemp = [...getCardFields()];
+    switchCfgTab('card');
     openModal('columnModal');
 }
 
+function switchCfgTab(tab) {
+    cfgActiveTab = tab;
+    var btnCard = document.getElementById('cfgTabCard');
+    var btnOsn = document.getElementById('cfgTabOsnovne');
+    if (btnCard) { btnCard.style.borderBottom = tab === 'card' ? '2px solid var(--primary)' : 'none'; btnCard.style.color = tab === 'card' ? 'var(--primary)' : 'var(--text-secondary)'; }
+    if (btnOsn) { btnOsn.style.borderBottom = tab === 'osnovne' ? '2px solid var(--primary)' : 'none'; btnOsn.style.color = tab === 'osnovne' ? 'var(--primary)' : 'var(--text-secondary)'; }
+    var label = document.getElementById('colCfgLabel');
+    if (label) label.textContent = tab === 'card' ? 'Що показувати на картці пасажира в списку' : 'Які поля показувати у вкладці «Основне» при натисканні на ліда';
+    renderColumnConfigurator();
+}
+
 function renderColumnConfigurator() {
-    const list = document.getElementById('colCfgList');
+    var list = document.getElementById('colCfgList');
     if (!list) return;
 
-    const allKeys = getAllColumnKeys();
-    // Collect all fields used in OTHER_SECTIONS
-    const otherFields = new Set();
-    OTHER_SECTIONS.forEach(s => s.fields.forEach(f => otherFields.add(f)));
-
-    list.innerHTML = allKeys.map(key => {
-        const colName = COL_MAP[key] || key;
-        const isSel = colCfgTemp.includes(key);
-        const isInOther = otherFields.has(key) && !isSel;
-        return `<div class="col-cfg-item ${isSel?'checked':''} ${isInOther?'greyed':''}" onclick="toggleColCfg('${key}')">
-            <div class="col-check">${isSel ? '✓' : ''}</div>
-            <div class="col-name">${colName}</div>
-        </div>`;
-    }).join('');
+    if (cfgActiveTab === 'card') {
+        list.innerHTML = CARD_FIELD_OPTIONS.map(function(f) {
+            var isSel = cardCfgTemp.includes(f.key);
+            return '<div class="col-cfg-item ' + (isSel ? 'checked' : '') + '" onclick="toggleColCfg(\'' + f.key + '\')">' +
+                '<div class="col-check">' + (isSel ? '✓' : '') + '</div>' +
+                '<div class="col-name">' + f.label + '</div></div>';
+        }).join('');
+    } else {
+        var allKeys = getAllColumnKeys();
+        var otherFields = new Set();
+        OTHER_SECTIONS.forEach(function(s) { s.fields.forEach(function(f) { otherFields.add(f); }); });
+        list.innerHTML = allKeys.map(function(key) {
+            var colName = COL_MAP[key] || key;
+            var isSel = colCfgTemp.includes(key);
+            var isInOther = otherFields.has(key) && !isSel;
+            return '<div class="col-cfg-item ' + (isSel ? 'checked' : '') + ' ' + (isInOther ? 'greyed' : '') + '" onclick="toggleColCfg(\'' + key + '\')">' +
+                '<div class="col-check">' + (isSel ? '✓' : '') + '</div>' +
+                '<div class="col-name">' + colName + '</div></div>';
+        }).join('');
+    }
 }
 
 function toggleColCfg(key) {
-    const idx = colCfgTemp.indexOf(key);
-    if (idx >= 0) {
-        colCfgTemp.splice(idx, 1);
+    if (cfgActiveTab === 'card') {
+        var idx = cardCfgTemp.indexOf(key);
+        if (idx >= 0) cardCfgTemp.splice(idx, 1); else cardCfgTemp.push(key);
     } else {
-        colCfgTemp.push(key);
+        var idx = colCfgTemp.indexOf(key);
+        if (idx >= 0) colCfgTemp.splice(idx, 1); else colCfgTemp.push(key);
     }
     renderColumnConfigurator();
 }
 
 function saveColumnConfig() {
-    if (colCfgTemp.length === 0) {
-        alert('Оберіть хоча б одну колонку');
-        return;
-    }
+    if (cfgActiveTab === 'osnovne' && colCfgTemp.length === 0) { showToast('Оберіть хоча б одну колонку'); return; }
+    if (cfgActiveTab === 'card' && cardCfgTemp.length === 0) { showToast('Оберіть хоча б один елемент'); return; }
     localStorage.setItem(getManagerColsKey(), JSON.stringify(colCfgTemp));
+    localStorage.setItem(getManagerCardKey(), JSON.stringify(cardCfgTemp));
     closeModal('columnModal');
-    // Re-render open details
     if (openDetailsId) {
-        const p = passengers.find(x => x['PAX_ID'] === openDetailsId);
+        var p = passengers.find(function(x) { return x['PAX_ID'] === openDetailsId; });
         if (p) {
-            const el = document.getElementById('details-' + openDetailsId);
+            var el = document.getElementById('details-' + openDetailsId);
             if (el) el.innerHTML = renderDetails(p);
         }
     }
-    renderList();
+    render();
+    showToast('✅ Налаштування збережено');
 }
 
 function resetDefaultColumns() {
-    colCfgTemp = [...DEFAULT_OSNOVNE_FIELDS];
+    if (cfgActiveTab === 'card') {
+        cardCfgTemp = [...DEFAULT_CARD_FIELDS];
+    } else {
+        colCfgTemp = [...DEFAULT_OSNOVNE_FIELDS];
+    }
     renderColumnConfigurator();
 }
 
@@ -5203,7 +5667,7 @@ function showToast(msg, duration) {
 }
 
 function showConfirm(text, cb) {
-    document.getElementById('confirmText').textContent = text;
+    document.getElementById('confirmText').innerHTML = text.replace(/\n/g, '<br>');
     confirmCallback = cb;
     document.getElementById('confirmOverlay').classList.add('show');
 }
@@ -6369,7 +6833,7 @@ function renderArchive() {
     let cardsHtml = archived.map(p => {
         const id = p['PAX_ID'] || '';
         const name = p['Піб'] || '—';
-        const phone = p['Телефон пасажира'] || '—';
+        const phone = String(p['Телефон пасажира'] || '—');
         const from = p['Адреса відправки'] || '';
         const to = p['Адреса прибуття'] || '';
         const date = p['Дата виїзду'] || '';
@@ -6676,6 +7140,282 @@ function routeBulkDeleteFull() {
         }
     });
 }
+
+// ================================================================
+// ONBOARDING — навчання з підсвіткою кнопок
+// ================================================================
+const OB_KEY = 'gresco_onboard_done';
+const OB_CAT_KEY = 'gresco_onboard_cats';
+let _obStep = 0, _obCat = null, _obSteps = [];
+
+const OB_CATS = [
+    {
+        id: 'start', icon: '🚀', name: 'Початок роботи', color: '#ede9fe',
+        desc: 'Вхід, зміна імені, встановлення, меню',
+        steps: [
+            { t: '#userAvatar', title: '👤 Аватар менеджера', desc: 'Натисніть щоб обрати менеджера або переключитись між слотами' },
+            { t: '.burger-btn', title: '☰ Бічне меню', desc: 'Фільтри пасажирів, рейси, маршрути та архів' },
+            { t: '.search-box', title: '🔍 Пошук', desc: 'Швидкий пошук по ПІБ або телефону пасажира' },
+            { t: '#presenceBar', title: '👥 Онлайн', desc: 'Аватари менеджерів що зараз працюють в системі' }
+        ]
+    },
+    {
+        id: 'nav', icon: '📱', name: 'Нижня навігація', color: '#dbeafe',
+        desc: 'Основні кнопки внизу екрану',
+        steps: [
+            { t: '#navPax', title: '👥 Пасажири', desc: 'Показати список всіх пасажирів' },
+            { t: '#navParcels', title: '📦 Посилки', desc: 'Модуль посилок (окреме підключення)' },
+            { t: '.nav-item[onclick*="silentSync"]', title: '🔄 Синхронізація', desc: 'Вручну оновити дані з Google Sheets' },
+            { t: '.nav-item[onclick*="openColumnConfigurator"]', title: '⚙️ Колонки', desc: 'Налаштувати які поля показувати на картках' },
+            { t: '.nav-item[onclick*="openAddModal"]', title: '➕ Додати', desc: 'Створити нового пасажира (є SMS-парсер!)' }
+        ]
+    },
+    {
+        id: 'passengers', icon: '👥', name: 'Робота з пасажирами', color: '#d1fae5',
+        desc: 'Картки, редагування, месенджери',
+        steps: [
+            { t: '.nav-item[onclick*="openAddModal"]', title: '➕ Додати пасажира', desc: 'Заповніть ПІБ і телефон. Є SMS-парсер — вставте текст і дані заповняться автоматично!' },
+            { t: '.search-box', title: '🔍 Пошук', desc: 'Введіть ПІБ або телефон — список фільтрується на льоту' },
+            { t: '.lead-card', title: '📋 Натисніть на картку', desc: 'Картка розгорнеться і покаже деталі: ПІБ, адреси, дати, примітки. Кожне поле можна редагувати на місці!', act: 'expand' },
+            { t: '.card-actions-toggle', title: '▼ Стрілка справа', desc: 'Натисніть ▼ — з\'являться кнопки: 📞 Дзвінок, ✉️ Писати, ✏️ Редагувати, 🚐 Рейс, 📦 Архів, 🗑️ Видалити', act: 'actions' },
+            { t: '.card-checkbox', title: '☑️ Галочка зліва', desc: 'Поставте галочку на картці — внизу з\'явиться панель масових дій', act: 'check' },
+            { t: '#bulkToolbar', title: '⚡ Панель масових дій', desc: '🚐 Рейс, 🗺️ Маршрут, ⚡ Оптимізація, 📦 Архів — все для обраних пасажирів', act: 'showBulk' }
+        ]
+    },
+    {
+        id: 'trips', icon: '🚐', name: 'Рейси', color: '#fef3c7',
+        desc: 'Створення, календар, призначення, місця',
+        steps: [
+            { t: '.burger-btn', title: '🚐 Відкрити рейси', desc: 'Меню ☰ → "Рейси" → "Управління рейсами" — список всіх рейсів' },
+            { t: null, title: '➕ Створити рейс', desc: 'У розділі рейсів "Новий рейс": напрямок, дати в календарі, авто, розкладка місць' },
+            { t: null, title: '🪑 Розкладка місць', desc: 'Оберіть тип авто та кількість місць. Можна додати кілька авто до одного рейсу' },
+            { t: null, title: '📌 Призначити пасажира', desc: 'На картці пасажира "🚐 Рейс" → оберіть дату → авто → підтвердіть' },
+            { t: null, title: '📅 Календар рейсів', desc: 'Кольорові точки показують дати рейсів. Натисніть на дату — побачите рейси' },
+            { t: null, title: '📦 Архів / 🗑️ Видалити', desc: 'На картці рейсу кнопки архівування та видалення. Архівований рейс можна відновити' }
+        ]
+    },
+    {
+        id: 'bulk', icon: '☑️', name: 'Масові дії', color: '#fce7f3',
+        desc: 'Галочки → рейс, маршрут, оптимізація',
+        steps: [
+            { t: null, title: '☑️ Вибір галочками', desc: 'Поставте ☑ на картках — внизу з\'явиться панель масових дій' },
+            { t: '#bulkToolbar .assign', title: '🚐 Рейс (масово)', desc: 'Призначити обраних пасажирів на рейс одним натиском' },
+            { t: '#bulkToolbar .route', title: '🗺️ Маршрут (масово)', desc: 'Додати обраних до маршруту для планування збору' },
+            { t: '#bulkToolbar .optimize', title: '⚡ Оптимізація', desc: 'Оптимізувати порядок за адресами → отримати маршрут Google Maps' },
+            { t: null, title: '📦 Архів (масово)', desc: 'Архівувати обраних пасажирів. З архіву можна відновити' }
+        ]
+    },
+    {
+        id: 'routes', icon: '🗺️', name: 'Маршрути', color: '#e0e7ff',
+        desc: 'Аркуші маршрутів, перенос, видалення',
+        steps: [
+            { t: '.burger-btn', title: '🗺️ Маршрути', desc: 'Меню ☰ → "Маршрути". Кожен маршрут — окремий аркуш для групи пасажирів' },
+            { t: null, title: '➕ Створити маршрут', desc: 'У меню "➕ Новий маршрут" → введіть назву (напр. "Київ-Варшава 25.03")' },
+            { t: null, title: '↔️ Перенос', desc: 'У маршруті натисніть на пасажира → "Перенести" в інший маршрут' },
+            { t: null, title: '🗑️ Видалення', desc: 'Видалення маршруту не видаляє пасажирів з основної бази' }
+        ]
+    },
+    {
+        id: 'archive', icon: '📦', name: 'Архів', color: '#fee2e2',
+        desc: 'Архів, відновлення, видалення назавжди',
+        steps: [
+            { t: '.burger-btn', title: '📦 Архів', desc: 'Меню ☰ → "Пасажири" → "📦 Архів" — список архівованих лідів' },
+            { t: null, title: '♻️ Відновити', desc: 'Натисніть "♻️ Відновити" — пасажир повернеться в основний список' },
+            { t: null, title: '🗑️ Видалити назавжди', desc: 'УВАГА: незворотня дія! Дані видаляються з Google Sheets повністю' }
+        ]
+    }
+];
+
+// ── Каталог категорій ──
+function obOpenCatalog() {
+    const list = document.getElementById('obCatalogList');
+    const done = obGetDoneCats();
+    let h = '';
+    OB_CATS.forEach(c => {
+        const ok = done.includes(c.id);
+        h += '<div class="ob-cat" onclick="obStartCat(\'' + c.id + '\')">';
+        h += '<div class="ob-cat-icon" style="background:' + c.color + '">' + c.icon + '</div>';
+        h += '<div class="ob-cat-info"><div class="ob-cat-name">' + c.name + '</div><div class="ob-cat-desc">' + c.desc + '</div></div>';
+        h += '<div class="ob-cat-badge ' + (ok ? 'done' : 'new') + '">' + (ok ? '✓' : c.steps.length + ' кр.') + '</div>';
+        h += '</div>';
+    });
+    list.innerHTML = h;
+    document.getElementById('obCatalog').classList.add('show');
+}
+function obCloseCatalog() { document.getElementById('obCatalog').classList.remove('show'); }
+function obGetDoneCats() { try { return JSON.parse(localStorage.getItem(OB_CAT_KEY) || '[]'); } catch(e) { return []; } }
+function obMarkCatDone(id) { const d = obGetDoneCats(); if (!d.includes(id)) { d.push(id); localStorage.setItem(OB_CAT_KEY, JSON.stringify(d)); } }
+
+// ── Запуск категорії ──
+function obStartCat(catId) {
+    obCloseCatalog();
+    const cat = OB_CATS.find(c => c.id === catId);
+    if (!cat) return;
+    _obCat = cat; _obSteps = cat.steps; _obStep = 0;
+    document.getElementById('obOverlay').classList.add('show');
+    obRender();
+}
+
+// ── Backward compat ──
+function startOnboarding() { obOpenCatalog(); }
+function openOnboardCatalog() { obOpenCatalog(); }
+function closeOnboardCatalog() { obCloseCatalog(); }
+
+// ── Виконати дію для кроку ──
+function obDoAction(act) {
+    // Знаходимо першу картку пасажира
+    const firstCard = document.querySelector('.lead-card');
+    if (!firstCard) return;
+    const paxId = firstCard.getAttribute('data-pax-id');
+    if (!paxId) return;
+
+    if (act === 'expand') {
+        // Розгорнути деталі першої картки
+        if (openDetailsId !== paxId) toggleDetails(paxId);
+    } else if (act === 'actions') {
+        // Показати панель дій першої картки
+        if (openDetailsId) { openDetailsId = null; render(); }
+        if (openActionsId !== paxId) { openActionsId = paxId; render(); }
+    } else if (act === 'check') {
+        // Поставити галочку на першій картці
+        openActionsId = null; openDetailsId = null;
+        if (!selectedIds.has(paxId)) { selectedIds.add(paxId); updateBulkToolbar(); render(); }
+    } else if (act === 'showBulk') {
+        // Показати bulk toolbar (якщо нема вибраних — вибрати першого)
+        if (selectedIds.size === 0 && paxId) { selectedIds.add(paxId); updateBulkToolbar(); render(); }
+    }
+}
+
+// ── Прибрати демо-зміни ──
+function obCleanup() {
+    if (openDetailsId) { openDetailsId = null; }
+    if (openActionsId) { openActionsId = null; }
+    if (selectedIds.size > 0) { selectedIds.clear(); updateBulkToolbar(); }
+    render();
+}
+
+// ── Render step ──
+function obRender() {
+    const s = _obSteps[_obStep], total = _obSteps.length;
+    const spotlight = document.getElementById('obSpotlight');
+    const tip = document.getElementById('obTooltip');
+
+    // Виконати дію (розгорнути картку, показати чекбокс тощо)
+    if (s.act) obDoAction(s.act);
+
+    document.getElementById('obTitle').textContent = s.title;
+    document.getElementById('obDesc').textContent = s.desc;
+    document.getElementById('obCounter').textContent = (_obStep + 1) + ' / ' + total;
+
+    // Buttons
+    let bh = '';
+    if (_obStep > 0) bh += '<button class="ob-btn ob-btn-back" onclick="obBack()">←</button>';
+    bh += '<button class="ob-btn ob-btn-next" onclick="obNext()">' + (_obStep === total - 1 ? 'Готово ✓' : 'Далі →') + '</button>';
+    document.getElementById('obBtns').innerHTML = bh;
+
+    // Невелика затримка щоб DOM оновився після action
+    setTimeout(function() { obPosition(s); }, 50);
+}
+
+function obPosition(s) {
+    const spotlight = document.getElementById('obSpotlight');
+    const tip = document.getElementById('obTooltip');
+
+    // Для act-кроків шукаємо реальний елемент після дії
+    let el = null;
+    if (s.act === 'expand') {
+        el = document.querySelector('.card-details.show');
+    } else if (s.act === 'actions') {
+        el = document.querySelector('.card-actions.show');
+    } else if (s.act === 'check') {
+        el = document.querySelector('.card-checkbox:checked');
+        if (el) el = el.closest('.card-checkbox-wrap') || el;
+    } else if (s.act === 'showBulk') {
+        el = document.querySelector('#bulkToolbar.show') || document.getElementById('bulkToolbar');
+    } else if (s.t) {
+        el = document.querySelector(s.t);
+    }
+
+    if (el) {
+        const r = el.getBoundingClientRect();
+        // Якщо елемент невидимий або за межами екрану — fallback на center
+        if (r.width === 0 && r.height === 0) { obPositionCenter(spotlight, tip); return; }
+        const pad = 6;
+        spotlight.style.display = 'block';
+        spotlight.style.left = (r.left - pad) + 'px';
+        spotlight.style.top = (r.top - pad) + 'px';
+        spotlight.style.width = (r.width + pad * 2) + 'px';
+        spotlight.style.height = (r.height + pad * 2) + 'px';
+
+        const spaceBelow = window.innerHeight - r.bottom;
+        const tipH = 130;
+        tip.classList.remove('arrow-top', 'arrow-bottom', 'arrow-none');
+
+        if (spaceBelow > tipH + 20) {
+            tip.style.top = (r.bottom + 12) + 'px';
+            tip.style.bottom = 'auto';
+            tip.classList.add('arrow-top');
+        } else {
+            tip.style.top = 'auto';
+            tip.style.bottom = (window.innerHeight - r.top + 12) + 'px';
+            tip.classList.add('arrow-bottom');
+        }
+        let left = Math.max(16, Math.min(r.left, window.innerWidth - 316));
+        tip.style.left = left + 'px';
+        tip.style.right = 'auto';
+        tip.style.transform = 'none';
+        const arrowPos = Math.max(16, Math.min(r.left + r.width / 2 - left, 280));
+        tip.style.setProperty('--arrow-left', arrowPos + 'px');
+
+        // Скрол до елемента якщо не видно
+        if (r.top < 40 || r.bottom > window.innerHeight - 20) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function() { obPosition(s); }, 400);
+            return;
+        }
+    } else {
+        obPositionCenter(spotlight, tip);
+    }
+
+    tip.style.animation = 'none'; tip.offsetHeight; tip.style.animation = '';
+}
+
+function obPositionCenter(spotlight, tip) {
+    spotlight.style.display = 'none';
+    tip.classList.remove('arrow-top', 'arrow-bottom');
+    tip.classList.add('arrow-none');
+    tip.style.top = '50%';
+    tip.style.left = '50%';
+    tip.style.right = 'auto';
+    tip.style.bottom = 'auto';
+    tip.style.transform = 'translate(-50%, -50%)';
+}
+
+function obNext() {
+    if (_obStep < _obSteps.length - 1) { _obStep++; obRender(); }
+    else { obFinish(true); }
+}
+function obBack() {
+    if (_obStep > 0) { _obStep--; obRender(); }
+}
+function obSkip() { obFinish(false); }
+
+function obFinish(completed) {
+    document.getElementById('obOverlay').classList.remove('show');
+    obCleanup(); // прибрати демо-розгортання карток, галочки тощо
+    if (completed && _obCat) obMarkCatDone(_obCat.id);
+    localStorage.setItem(OB_KEY, Date.now());
+    apiPost('logOnboarding', {
+        completed: !!completed,
+        category: _obCat ? _obCat.id : '',
+        categoryName: _obCat ? _obCat.name : '',
+        stepsViewed: _obStep + 1,
+        totalSteps: _obSteps.length
+    });
+}
+
+// Навчання тільки по кнопці — без автозапуску
+function checkOnboardingAutoStart() { }
 </script>
 </body>
 </html>

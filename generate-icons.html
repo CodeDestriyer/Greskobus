@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html><head><title>Generate GrescoBus Icons</title></head>
+<body>
+<h2>Натисніть щоб завантажити іконки для PWA</h2>
+<button onclick="gen(180)">Завантажити icon-180.png (Apple Touch Icon)</button>
+<button onclick="gen(192)">Завантажити icon-192.png</button>
+<button onclick="gen(512)">Завантажити icon-512.png</button>
+<script>
+function gen(size) {
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    // Заповнюємо ВСЮ площу без закруглень — iOS сам обріже кути
+    var grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#1a3a5e');
+    grad.addColorStop(1, '#0f2440');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    // Автобус емодзі
+    ctx.font = (size * 0.35) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('\uD83D\uDE90', size / 2, size * 0.32);
+    // GRESKO
+    ctx.fillStyle = 'white';
+    ctx.font = '800 ' + (size * 0.22) + 'px Arial, sans-serif';
+    ctx.fillText('GRESKO', size / 2, size * 0.62);
+    // BUS
+    ctx.fillStyle = '#d90d0d';
+    ctx.font = '800 ' + (size * 0.2) + 'px Arial, sans-serif';
+    ctx.fillText('BUS', size / 2, size * 0.82);
+
+    var a = document.createElement('a');
+    a.download = 'icon-' + size + '.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+}
+</script>
+</body></html>

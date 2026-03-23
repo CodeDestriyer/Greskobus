@@ -91,6 +91,33 @@ function getSheet(name) {
   return SpreadsheetApp.openById(SS_ID).getSheetByName(name);
 }
 
+// ── ЛОГУВАННЯ в Archive_crm → аркуш "Логи" ──
+var LOG_COLS = ['Дата','Менеджер','Дія','Деталі','PAX_ID','CAL_ID','RTE_ID'];
+
+function writeLog(manager, action, details, ids) {
+  try {
+    var archSS = SpreadsheetApp.openById(DB.ARCHIVE);
+    var logSheet = archSS.getSheetByName('Логи');
+    if (!logSheet) {
+      logSheet = archSS.insertSheet('Логи');
+      logSheet.getRange(1, 1, 1, LOG_COLS.length).setValues([LOG_COLS]);
+      logSheet.getRange(1, 1, 1, LOG_COLS.length).setFontWeight('bold');
+    }
+    ids = ids || {};
+    logSheet.appendRow([
+      now(),
+      manager || '',
+      action || '',
+      details || '',
+      ids.pax_id || '',
+      ids.cal_id || '',
+      ids.rte_id || ''
+    ]);
+  } catch(e) {
+    // Логування не повинно ламати основну операцію
+  }
+}
+
 function genId(prefix) {
   var d = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyyMMdd');
   var r = Math.random().toString(36).substr(2, 4).toUpperCase();
@@ -1594,7 +1621,10 @@ function apiFreeSeat(params) {
 function apiGetRoutesList(params) {
   var cache = CacheService.getScriptCache();
   var cacheKey = 'routesList_v2';
-  var cached = cache.get(cacheKey);
+  if (params && params.forceRefresh) {
+    cache.remove(cacheKey);
+  }
+  var cached = (!params || !params.forceRefresh) ? cache.get(cacheKey) : null;
   if (cached) {
     return { ok: true, data: JSON.parse(cached), fromCache: true };
   }
@@ -2080,7 +2110,30 @@ function doPost(e) {
   }
 
   var action = body.action || '';
+  var manager = body.manager || '';
   var result = { ok: false, error: 'Unknown action: ' + action };
+
+  // Дії що потребують логування (запис/зміна даних)
+  // Логуємо тільки важливі дії (додавання, видалення, архівація, рейси)
+  // НЕ логуємо: updateField, updatePassenger, bulkUpdateField, updateTrip, updateRouteField
+  var LOGGED_ACTIONS = {
+    'addPassenger': 'Додано пасажира',
+    'clonePassenger': 'Клоновано пасажира',
+    'assignTrip': 'Призначено рейс',
+    'unassignTrip': 'Знято з рейсу',
+    'reassignTrip': 'Пересадка на рейс',
+    'deletePassenger': 'Видалено пасажира',
+    'bulkDelete': 'Масове видалення',
+    'archivePassenger': 'Архівовано пасажира',
+    'restorePassenger': 'Відновлено з архіву',
+    'moveDirection': 'Зміна напряму',
+    'createTrip': 'Створено рейс',
+    'archiveTrip': 'Архівовано рейс',
+    'deleteTrip': 'Видалено рейс',
+    'duplicateTrip': 'Дубльовано рейс',
+    'createRoute': 'Створено маршрут',
+    'deleteRoute': 'Видалено маршрут'
+  };
 
   try {
     switch (action) {
@@ -2146,13 +2199,101 @@ function doPost(e) {
       // ── FINANCE ──
       case 'getPayments':        result = apiGetPayments(body); break;
 
+      // ── PRESENCE (онлайн менеджери) ──
+      case 'heartbeat':          result = apiHeartbeat(body); break;
+      case 'getOnlineManagers':  result = apiGetOnlineManagers(body); break;
+
+      // ── ONBOARDING (навчання) ──
+      case 'logOnboarding':
+        var obStatus = body.completed ? 'Завершено' : ('Пропущено ' + body.stepsViewed + '/' + body.totalSteps);
+        var obDetails = (body.categoryName || body.category || '') + ' — ' + obStatus;
+        writeLog(manager, 'Навчання', obDetails);
+        result = { ok: true };
+        break;
+
       default:
-        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments' };
+        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments, heartbeat, getOnlineManagers' };
     }
+
+    // Логуємо успішні операції запису
+    if (result.ok && LOGGED_ACTIONS[action]) {
+      var logDetails = '';
+      if (body.col) logDetails = body.col + ' = ' + body.value;
+      else if (body.name) logDetails = body.name;
+      else if (body.pax_ids) logDetails = body.pax_ids.length + ' записів';
+      else if (body.reason) logDetails = body.reason;
+      else if (result.pax_id) logDetails = result.pax_id;
+      else if (result.cal_ids) logDetails = result.cal_ids.join(', ');
+
+      writeLog(manager, LOGGED_ACTIONS[action], logDetails, {
+        pax_id: body.pax_id || (body.pax_ids ? body.pax_ids[0] : '') || result.pax_id || '',
+        cal_id: body.cal_id || body.new_cal_id || '',
+        rte_id: body.rte_id || ''
+      });
+    }
+
   } catch (err) {
     result = { ok: false, error: err.message };
   }
 
   return ContentService.createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ================================================================
+// PRESENCE — Онлайн-статус менеджерів (через CacheService)
+// ================================================================
+
+function apiHeartbeat(body) {
+  var name = (body.manager || '').trim();
+  if (!name) return { ok: false, error: 'manager is required' };
+
+  var device = body.device || '';
+  var os = body.os || '';
+  var browser = body.browser || '';
+  var pwa = body.pwa ? 'PWA' : 'Browser';
+  var deviceLabel = [device, os, browser, pwa].filter(Boolean).join(' / ');
+
+  var cache = CacheService.getScriptCache();
+  var key = 'presence_' + name;
+  var data = JSON.stringify({ name: name, ts: new Date().toISOString(), device: deviceLabel });
+  cache.put(key, data, 90);
+
+  var knownRaw = cache.get('presence_known_managers') || '[]';
+  var known = JSON.parse(knownRaw);
+  if (known.indexOf(name) === -1) {
+    known.push(name);
+    cache.put('presence_known_managers', JSON.stringify(known), 21600);
+  }
+
+  // Логуємо вхід з нового пристрою (раз на 10 хвилин на менеджера)
+  var loginKey = 'device_log_' + name;
+  var lastLog = cache.get(loginKey);
+  if (!lastLog || lastLog !== deviceLabel) {
+    cache.put(loginKey, deviceLabel, 600); // 10 хв
+    writeLog(name, 'Вхід', deviceLabel);
+  }
+
+  return { ok: true };
+}
+
+function apiGetOnlineManagers(body) {
+  var cache = CacheService.getScriptCache();
+  var knownRaw = cache.get('presence_known_managers') || '[]';
+  var known = JSON.parse(knownRaw);
+  var online = [];
+  if (known.length > 0) {
+    var keys = known.map(function(n) { return 'presence_' + n; });
+    var cached = cache.getAll(keys);
+    for (var i = 0; i < known.length; i++) {
+      var val = cached['presence_' + known[i]];
+      if (val) {
+        try {
+          var parsed = JSON.parse(val);
+          online.push({ name: parsed.name, ts: parsed.ts, device: parsed.device || '' });
+        } catch (e) {}
+      }
+    }
+  }
+  return { ok: true, managers: online };
 }
