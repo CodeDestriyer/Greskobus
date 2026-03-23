@@ -670,10 +670,32 @@
         .onboard-btn.skip { background: #f1f5f9; color: #64748b; }
         .onboard-btn.next { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
         .onboard-btn.next:active { transform: scale(0.97); }
+        .onboard-btn.back { background: #f1f5f9; color: var(--primary); }
         .onboard-progress { height: 3px; background: #e2e8f0; border-radius: 3px; margin-bottom: 14px; overflow: hidden; }
         .onboard-progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 3px; transition: width 0.4s ease; }
-        .onboard-tutorial-btn { width: 100%; padding: 10px; background: #f0f9ff; border: 1px dashed var(--primary); color: var(--primary); border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
-        .onboard-tutorial-btn:hover { background: #e0f2fe; }
+        /* Кнопка навчання у панелі входу */
+        .onboard-tutorial-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .onboard-tutorial-btn:active { transform: scale(0.97); }
+        /* Каталог категорій навчання */
+        .onboard-catalog { position: fixed; inset: 0; z-index: 9990; display: none; align-items: center; justify-content: center; padding: 16px; }
+        .onboard-catalog.show { display: flex; }
+        .onboard-catalog-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9990; }
+        .onboard-catalog-box { position: relative; z-index: 9991; background: white; border-radius: 20px; max-width: 380px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.3); animation: onboardSlideIn 0.35s ease; }
+        .onboard-catalog-header { padding: 20px 20px 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        .onboard-catalog-header h2 { font-size: 18px; color: #1a3a5e; margin: 0 0 4px; }
+        .onboard-catalog-header p { font-size: 12px; color: #94a3b8; margin: 0; }
+        .onboard-catalog-close { position: absolute; top: 14px; right: 14px; background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; }
+        .onboard-catalog-list { padding: 12px; }
+        .onboard-cat-item { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid #f1f5f9; margin-bottom: 8px; }
+        .onboard-cat-item:hover { background: #f8fafc; border-color: #e2e8f0; }
+        .onboard-cat-item:active { transform: scale(0.98); }
+        .onboard-cat-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .onboard-cat-info { flex: 1; min-width: 0; }
+        .onboard-cat-name { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+        .onboard-cat-desc { font-size: 11px; color: #94a3b8; line-height: 1.3; }
+        .onboard-cat-badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; flex-shrink: 0; }
+        .onboard-cat-badge.done { background: #dcfce7; color: #16a34a; }
+        .onboard-cat-badge.new { background: #dbeafe; color: #2563eb; }
 
         /* Duplicate warning */
         .duplicate-warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 11px; margin-bottom: 8px; display: none; }
@@ -1230,7 +1252,7 @@
             </div>
         </div>
         <div style="padding:0 16px 16px">
-            <button class="onboard-tutorial-btn" onclick="closeModal('managerModal');startOnboarding()">🎓 Пройти навчання</button>
+            <button class="onboard-tutorial-btn" onclick="closeModal('managerModal');openOnboardCatalog()">🎓 Навчання</button>
         </div>
     </div>
 </div>
@@ -1375,7 +1397,20 @@
     </div>
 </div>
 
-<!-- ONBOARDING TUTORIAL -->
+<!-- ONBOARDING CATALOG -->
+<div class="onboard-catalog" id="onboardCatalog">
+    <div class="onboard-catalog-bg" onclick="closeOnboardCatalog()"></div>
+    <div class="onboard-catalog-box">
+        <button class="onboard-catalog-close" onclick="closeOnboardCatalog()">×</button>
+        <div class="onboard-catalog-header">
+            <h2>🎓 Навчання</h2>
+            <p>Оберіть тему, щоб дізнатись більше</p>
+        </div>
+        <div class="onboard-catalog-list" id="onboardCatalogList"></div>
+    </div>
+</div>
+
+<!-- ONBOARDING TUTORIAL STEPS -->
 <div class="onboard-overlay" id="onboardOverlay">
     <div class="onboard-backdrop" onclick="onboardSkip()"></div>
     <div class="onboard-spotlight" id="onboardSpotlight"></div>
@@ -1385,7 +1420,7 @@
         <div class="onboard-step-text" id="onboardText"></div>
         <div class="onboard-progress"><div class="onboard-progress-bar" id="onboardProgress"></div></div>
         <div class="onboard-dots" id="onboardDots"></div>
-        <div class="onboard-btns">
+        <div class="onboard-btns" id="onboardBtns">
             <button class="onboard-btn skip" onclick="onboardSkip()">Пропустити</button>
             <button class="onboard-btn next" id="onboardNext" onclick="onboardNext()">Далі →</button>
         </div>
@@ -7049,64 +7084,163 @@ function routeBulkDeleteFull() {
 }
 
 // ================================================================
-// ONBOARDING TUTORIAL — анімоване навчання
+// ONBOARDING TUTORIAL — навчання з категоріями
 // ================================================================
 const ONBOARD_KEY = 'gresco_onboard_done';
+const ONBOARD_CAT_KEY = 'gresco_onboard_cats';
 let onboardStep = 0;
-const onboardSteps = [
+let onboardActiveCat = null;
+let onboardActiveSteps = [];
+
+// ── Категорії навчання ──
+const onboardCategories = [
     {
-        icon: '👤',
-        title: 'Вхід та менеджер',
-        text: 'Натисніть на свій аватар у правому верхньому куті, щоб обрати або змінити менеджера. Кожен слот — окремий профіль з власними налаштуваннями. Натисніть ✏️ щоб змінити ім\'я.',
-        target: '#userAvatar',
-        position: 'bottom'
+        id: 'start',
+        icon: '🚀',
+        name: 'Початок роботи',
+        desc: 'Вхід, зміна імені, встановлення на телефон',
+        color: '#ede9fe',
+        steps: [
+            { icon: '👤', title: 'Вхід у систему', text: 'Натисніть на свій аватар у правому верхньому куті. Оберіть один з 3 слотів менеджера. Кожен слот — окремий профіль з власними налаштуваннями колонок та карток.', target: '#userAvatar', position: 'bottom' },
+            { icon: '✏️', title: 'Зміна імені менеджера', text: 'У вікні входу натисніть ✏️ біля імені слота, щоб змінити ім\'я на своє. Це ім\'я буде відображатись для інших менеджерів та в логах.', target: null, position: 'center' },
+            { icon: '📲', title: 'Встановити на телефон', text: 'Android: відкрийте GrescoBus у Chrome → меню ⋮ → "Додати на головний екран".\n\niPhone: Safari → кнопка 📤 "Поділитися" → "На Початковий екран". Працюватиме як повноцінний додаток!', target: null, position: 'center' },
+            { icon: '☰', title: 'Головне меню', text: 'Натисніть ☰ зліва зверху. Тут усі розділи: пасажири за напрямками, рейси, маршрути та архів. Кожен розділ розгортається натисканням.', target: '.burger-btn', position: 'bottom' },
+            { icon: '🔄', title: 'Синхронізація', text: 'Дані синхронізуються автоматично кожну хвилину. Зелена точка ● на аватарі = все ОК. Жовта = завантаження. Червона = помилка. Натисніть 🔄 "Синхр." для ручного оновлення.', target: null, position: 'center' }
+        ]
     },
     {
-        icon: '📲',
-        title: 'Встановити на телефон',
-        text: 'Щоб працювати як додаток — відкрийте GrescoBus у Chrome на телефоні. Натисніть меню ⋮ → "Додати на головний екран". На iPhone: кнопка "Поділитися" 📤 → "На Початковий екран".',
-        target: null,
-        position: 'center'
+        id: 'passengers',
+        icon: '👥',
+        name: 'Пасажири',
+        desc: 'Додати, редагувати, SMS-парсер, фільтри',
+        color: '#dbeafe',
+        steps: [
+            { icon: '➕', title: 'Додати пасажира', text: 'Натисніть "➕ Додати" внизу екрану або в бічному меню. Заповніть ПІБ, телефон, напрямок та інші дані. Система автоматично перевірить дублікати!', target: '.bottom-nav', position: 'top' },
+            { icon: '💬', title: 'SMS-парсер', text: 'У формі додавання є "SMS парсер". Вставте текст повідомлення від клієнта — система автоматично розпізнає ПІБ, телефон, напрямок, адреси, дату та ціну!', target: null, position: 'center' },
+            { icon: '✏️', title: 'Редагування', text: 'Натисніть на картку пасажира, щоб розгорнути деталі. Кожне поле можна редагувати прямо на місці — натисніть на значення і змініть. Зміни зберігаються автоматично.', target: null, position: 'center' },
+            { icon: '🔍', title: 'Пошук та фільтри', text: 'Використовуйте пошукове поле зверху для швидкого пошуку по ПІБ або телефону. У бічному меню є фільтри: всі, нові (24 год), UA→EU, EU→UA.', target: '.search-box', position: 'bottom' },
+            { icon: '📱', title: 'Месенджери', text: 'На картці пасажира натисніть на іконку телефону — відкриється вибір месенджера: Viber, Telegram, WhatsApp. Можна одразу написати клієнту!', target: null, position: 'center' }
+        ]
     },
     {
-        icon: '☰',
-        title: 'Головне меню',
-        text: 'Натисніть ☰ зліва зверху щоб відкрити бічне меню. Тут фільтри по напрямках, рейси, маршрути та архів.',
-        target: '.burger-btn',
-        position: 'bottom'
+        id: 'trips',
+        icon: '🚐',
+        name: 'Рейси',
+        desc: 'Створити, призначити пасажирів, календар',
+        color: '#d1fae5',
+        steps: [
+            { icon: '🚐', title: 'Перегляд рейсів', text: 'Відкрийте бічне меню ☰ → "Рейси" → "Управління рейсами". Тут список усіх рейсів з фільтрами по напрямку, даті та автомобілю.', target: null, position: 'center' },
+            { icon: '➕', title: 'Створити рейс', text: 'У розділі рейсів натисніть "➕ Новий рейс". Оберіть напрямок, дати в календарі, автомобіль та розкладку місць. Можна додати кілька дат одразу!', target: null, position: 'center' },
+            { icon: '🪑', title: 'Розкладка місць', text: 'При створенні рейсу оберіть тип автомобіля та кількість місць. Система покаже візуальну розкладку салону. Можна додати кілька авто до одного рейсу.', target: null, position: 'center' },
+            { icon: '📌', title: 'Призначити на рейс', text: 'На картці пасажира натисніть "🚐 Рейс" або поставте галочки на кількох картках → "🚐 Рейс" у панелі масових дій. Оберіть дату та автомобіль.', target: null, position: 'center' },
+            { icon: '📅', title: 'Календар рейсів', text: 'У розділі рейсів є календар з кольоровими точками — видно на які дати є рейси та скільки пасажирів. Натисніть на дату, щоб побачити рейси цього дня.', target: null, position: 'center' },
+            { icon: '📦', title: 'Архів та видалення', text: 'Щоб архівувати рейс — натисніть на картці рейсу кнопку "📦 Архів". Для видалення — "🗑️ Видалити". Архівований рейс можна потім відновити.', target: null, position: 'center' }
+        ]
     },
     {
-        icon: '➕',
-        title: 'Додати пасажира',
-        text: 'Натисніть "Додати" внизу екрану або в бічному меню. Є SMS-парсер — вставте текст повідомлення і дані заповняться автоматично!',
-        target: '.bottom-nav',
-        position: 'top'
-    },
-    {
+        id: 'bulk',
         icon: '☑️',
-        title: 'Масові дії',
-        text: 'Поставте галочки на картках пасажирів — з\'явиться панель дій: призначити на рейс 🚐, додати до маршруту 🗺️, оптимізувати ⚡ або архівувати 📦.',
-        target: null,
-        position: 'center'
+        name: 'Масові дії',
+        desc: 'Галочки, рейс, маршрут, архів, оптимізація',
+        color: '#fef3c7',
+        steps: [
+            { icon: '☑️', title: 'Вибір пасажирів', text: 'Поставте галочку ☑ на картці пасажира — з\'явиться панель масових дій внизу. Можна обрати кілька або натиснути "Вибрати всі" для поточного фільтра.', target: null, position: 'center' },
+            { icon: '🚐', title: 'Призначити на рейс', text: 'Оберіть пасажирів галочками → натисніть "🚐 Рейс". Система покаже рейси що підходять по напрямку. Оберіть дату → автомобіль → підтвердіть.', target: null, position: 'center' },
+            { icon: '🗺️', title: 'Додати до маршруту', text: 'Оберіть пасажирів → "🗺️ Маршрут". Оберіть існуючий маршрут зі списку. Пасажири будуть додані в таблицю маршруту для планування.', target: null, position: 'center' },
+            { icon: '⚡', title: 'Оптимізація маршруту', text: 'Оберіть пасажирів → "⚡ Оптиміз.". Система оптимізує порядок збору/висадки за адресами. Можна обрати точку старту та фінішу. Результат — посилання на Google Maps!', target: null, position: 'center' },
+            { icon: '📦', title: 'Архівування', text: 'Оберіть пасажирів → "📦 Архів". Обрані ліди переміщуються в архів. З архіву можна відновити або видалити назавжди.', target: null, position: 'center' }
+        ]
     },
     {
-        icon: '🔄',
-        title: 'Синхронізація',
-        text: 'Дані синхронізуються автоматично кожну хвилину. Зелена точка на аватарі = все ОК. Натисніть 🔄 "Синхр." для ручного оновлення. Успіхів у роботі!',
-        target: null,
-        position: 'center'
+        id: 'routes',
+        icon: '🗺️',
+        name: 'Маршрути',
+        desc: 'Створити маршрут, управління, перенос',
+        color: '#fce7f3',
+        steps: [
+            { icon: '🗺️', title: 'Що таке маршрут?', text: 'Маршрут — це окремий аркуш для групи пасажирів одного рейсу. Зручно для планування збору та висадки. Кожен маршрут має свою таблицю.', target: null, position: 'center' },
+            { icon: '➕', title: 'Створити маршрут', text: 'Бічне меню ☰ → "Маршрути" → "➕ Новий маршрут". Введіть назву (наприклад "Київ-Варшава 25.03"). Маршрут з\'явиться в списку та в бічному меню.', target: null, position: 'center' },
+            { icon: '📋', title: 'Перегляд маршруту', text: 'Натисніть на маршрут у бічному меню. Побачите картки пасажирів з адресами, телефонами, статусами. Є фільтри: тип, статус ліда, статус оплати.', target: null, position: 'center' },
+            { icon: '↔️', title: 'Перенос між маршрутами', text: 'У маршруті натисніть на пасажира → "Перенести" → оберіть інший маршрут. Або масово: галочки → "Перенести" → обрати маршрут.', target: null, position: 'center' },
+            { icon: '🗑️', title: 'Видалення маршруту', text: 'У бічному меню натисніть "🗑️" біля маршруту. Система запитає підтвердження. Видалення маршруту не видаляє самих пасажирів з основної бази.', target: null, position: 'center' }
+        ]
+    },
+    {
+        id: 'archive',
+        icon: '📦',
+        name: 'Архів та видалення',
+        desc: 'Архів, відновлення, видалення назавжди',
+        color: '#fee2e2',
+        steps: [
+            { icon: '📦', title: 'Архів пасажирів', text: 'Архів — це сховище для пасажирів, які вже не актуальні. Натисніть "📦" на картці або оберіть масово. Архівовані ліди зберігаються окремо.', target: null, position: 'center' },
+            { icon: '👁️', title: 'Перегляд архіву', text: 'Бічне меню ☰ → "Пасажири" → "📦 Архів". Побачите список архівованих лідів з датою архівації та причиною.', target: null, position: 'center' },
+            { icon: '♻️', title: 'Відновлення', text: 'В архіві натисніть "♻️ Відновити" на картці пасажира. Він повернеться назад в основний список з усіма даними. Масово: галочки → "Відновити".', target: null, position: 'center' },
+            { icon: '🗑️', title: 'Видалення назавжди', text: 'В архіві натисніть "🗑️ Видалити назавжди". УВАГА: це незворотня дія! Дані будуть видалені з Google Sheets повністю. Масово: галочки → "Видалити назавжди".', target: null, position: 'center' }
+        ]
+    },
+    {
+        id: 'settings',
+        icon: '⚙️',
+        name: 'Налаштування',
+        desc: 'Колонки, картки, зовнішній вигляд',
+        color: '#f1f5f9',
+        steps: [
+            { icon: '⚙️', title: 'Налаштування колонок', text: 'Натисніть "⚙️ Колонки" в нижній навігації. Увімкніть або вимкніть поля, які відображаються на картках пасажирів. Налаштування зберігаються для кожного менеджера окремо.', target: null, position: 'center' },
+            { icon: '👥', title: 'Онлайн менеджери', text: 'У правому верхньому куті видно аватари менеджерів, які зараз онлайн. Зелена точка = менеджер активний. Так ви бачите хто зараз працює в системі.', target: '.presence-bar', position: 'bottom' },
+            { icon: '💰', title: 'Фінанси та оплати', text: 'На картці пасажира розгорніть деталі → вкладка "Фінанси". Тут ціна квитка, завдаток, борг, валюта. Статус оплати оновлюється автоматично при зміні сум.', target: null, position: 'center' }
+        ]
     }
 ];
 
-function startOnboarding() {
+// ── Каталог категорій ──
+function openOnboardCatalog() {
+    const list = document.getElementById('onboardCatalogList');
+    const done = getOnboardDoneCats();
+    let html = '';
+    onboardCategories.forEach(cat => {
+        const isDone = done.includes(cat.id);
+        html += '<div class="onboard-cat-item" onclick="startCategoryTutorial(\'' + cat.id + '\')">';
+        html += '<div class="onboard-cat-icon" style="background:' + cat.color + '">' + cat.icon + '</div>';
+        html += '<div class="onboard-cat-info"><div class="onboard-cat-name">' + cat.name + '</div><div class="onboard-cat-desc">' + cat.desc + '</div></div>';
+        html += '<div class="onboard-cat-badge ' + (isDone ? 'done' : 'new') + '">' + (isDone ? '✓' : cat.steps.length + ' кр.') + '</div>';
+        html += '</div>';
+    });
+    list.innerHTML = html;
+    document.getElementById('onboardCatalog').classList.add('show');
+}
+
+function closeOnboardCatalog() {
+    document.getElementById('onboardCatalog').classList.remove('show');
+}
+
+function getOnboardDoneCats() {
+    try { return JSON.parse(localStorage.getItem(ONBOARD_CAT_KEY) || '[]'); } catch(e) { return []; }
+}
+function markCatDone(catId) {
+    const done = getOnboardDoneCats();
+    if (!done.includes(catId)) { done.push(catId); localStorage.setItem(ONBOARD_CAT_KEY, JSON.stringify(done)); }
+}
+
+// ── Запуск навчання по категорії ──
+function startCategoryTutorial(catId) {
+    closeOnboardCatalog();
+    const cat = onboardCategories.find(c => c.id === catId);
+    if (!cat) return;
+    onboardActiveCat = cat;
+    onboardActiveSteps = cat.steps;
     onboardStep = 0;
     document.getElementById('onboardOverlay').classList.add('show');
     renderOnboardStep();
 }
 
+// ── Старий startOnboarding — тепер відкриває каталог ──
+function startOnboarding() {
+    openOnboardCatalog();
+}
+
 function renderOnboardStep() {
-    const step = onboardSteps[onboardStep];
-    const total = onboardSteps.length;
+    const step = onboardActiveSteps[onboardStep];
+    const total = onboardActiveSteps.length;
 
     document.getElementById('onboardIcon').textContent = step.icon;
     document.getElementById('onboardTitle').textContent = step.title;
@@ -7120,9 +7254,16 @@ function renderOnboardStep() {
     }
     document.getElementById('onboardDots').innerHTML = dotsHtml;
 
-    // Button text
-    const nextBtn = document.getElementById('onboardNext');
-    nextBtn.textContent = onboardStep === total - 1 ? 'Готово ✓' : 'Далі →';
+    // Buttons
+    const btnsEl = document.getElementById('onboardBtns');
+    let btnsHtml = '';
+    if (onboardStep > 0) {
+        btnsHtml += '<button class="onboard-btn back" onclick="onboardBack()">← Назад</button>';
+    } else {
+        btnsHtml += '<button class="onboard-btn skip" onclick="onboardSkip()">Закрити</button>';
+    }
+    btnsHtml += '<button class="onboard-btn next" onclick="onboardNext()">' + (onboardStep === total - 1 ? 'Готово ✓' : 'Далі →') + '</button>';
+    btnsEl.innerHTML = btnsHtml;
 
     // Spotlight
     const spotlight = document.getElementById('onboardSpotlight');
@@ -7139,7 +7280,6 @@ function renderOnboardStep() {
             spotlight.style.width = (rect.width + pad * 2) + 'px';
             spotlight.style.height = (rect.height + pad * 2) + 'px';
 
-            // Position card relative to spotlight
             if (step.position === 'bottom') {
                 card.style.top = (rect.bottom + 16) + 'px';
                 card.style.bottom = 'auto';
@@ -7153,17 +7293,11 @@ function renderOnboardStep() {
             }
         } else {
             spotlight.style.display = 'none';
-            card.style.top = '50%';
-            card.style.left = '50%';
-            card.style.bottom = 'auto';
-            card.style.transform = 'translate(-50%, -50%)';
+            card.style.top = '50%'; card.style.left = '50%'; card.style.bottom = 'auto'; card.style.transform = 'translate(-50%, -50%)';
         }
     } else {
         spotlight.style.display = 'none';
-        card.style.top = '50%';
-        card.style.left = '50%';
-        card.style.bottom = 'auto';
-        card.style.transform = 'translate(-50%, -50%)';
+        card.style.top = '50%'; card.style.left = '50%'; card.style.bottom = 'auto'; card.style.transform = 'translate(-50%, -50%)';
     }
 
     // Re-trigger animation
@@ -7173,34 +7307,45 @@ function renderOnboardStep() {
 }
 
 function onboardNext() {
-    if (onboardStep < onboardSteps.length - 1) {
+    if (onboardStep < onboardActiveSteps.length - 1) {
         onboardStep++;
         renderOnboardStep();
     } else {
-        onboardFinish();
+        onboardFinish(true);
+    }
+}
+
+function onboardBack() {
+    if (onboardStep > 0) {
+        onboardStep--;
+        renderOnboardStep();
     }
 }
 
 function onboardSkip() {
-    onboardFinish();
+    onboardFinish(false);
 }
 
-function onboardFinish() {
+function onboardFinish(completed) {
     document.getElementById('onboardOverlay').classList.remove('show');
+    if (completed && onboardActiveCat) {
+        markCatDone(onboardActiveCat.id);
+    }
     localStorage.setItem(ONBOARD_KEY, Date.now());
-    // Логуємо проходження навчання на сервер
-    const completed = onboardStep >= onboardSteps.length - 1;
+    // Логуємо на сервер
     apiPost('logOnboarding', {
-        completed: completed,
+        completed: !!completed,
+        category: onboardActiveCat ? onboardActiveCat.id : 'unknown',
+        categoryName: onboardActiveCat ? onboardActiveCat.name : '',
         stepsViewed: onboardStep + 1,
-        totalSteps: onboardSteps.length
+        totalSteps: onboardActiveSteps.length
     });
 }
 
-// Автозапуск при першому вході
+// Автозапуск каталогу при першому вході
 function checkOnboardingAutoStart() {
     if (!localStorage.getItem(ONBOARD_KEY) && getManagerName()) {
-        setTimeout(startOnboarding, 800);
+        setTimeout(openOnboardCatalog, 800);
     }
 }
 </script>

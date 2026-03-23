@@ -2202,8 +2202,9 @@ function doPost(e) {
 
       // ── ONBOARDING (навчання) ──
       case 'logOnboarding':
-        var status = body.completed ? 'Завершено' : ('Пропущено на кроці ' + body.stepsViewed + '/' + body.totalSteps);
-        writeLog(manager, 'Навчання', status);
+        var obStatus = body.completed ? 'Завершено' : ('Пропущено ' + body.stepsViewed + '/' + body.totalSteps);
+        var obDetails = (body.categoryName || body.category || '') + ' — ' + obStatus;
+        writeLog(manager, 'Навчання', obDetails);
         result = { ok: true };
         break;
 
