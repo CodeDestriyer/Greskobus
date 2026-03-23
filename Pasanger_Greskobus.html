@@ -268,9 +268,8 @@
 
         /* === ПАНЕЛЬ ДІЙ ЛІДА: 4 кнопки в ряд (Дзвінок, Писати, Редагувати, Видалити) ===
            Показується при натисканні стрілочки ▼. display:none/flex для чистого show/hide */
-        .card-actions { display: none; gap: 6px; padding: 0 12px; background: white; flex-wrap: wrap; }
-        .card-actions.show { display: flex; padding: 10px 12px; border-top: 1px solid var(--border); }
-        .card-actions .btn-card-action { flex: 1 1 auto; min-width: 80px; }
+        .card-actions { display: none; gap: 6px; padding: 0 12px; background: white; }
+        .card-actions.show { display: grid; grid-template-columns: repeat(3, 1fr); padding: 10px 12px; border-top: 1px solid var(--border); }
         /* Кнопка "Писати" — відкриває popup з месенджерами */
         .btn-card-action.btn-write { background: #dbeafe; color: #1d4ed8; }
         .btn-card-action.btn-write:hover { background: #1d4ed8; color: white; }
@@ -788,10 +787,10 @@
             .card-phone { min-width: auto; font-size: 12px; }
             .card-right-section { padding: 4px 6px; }
             .trips-grid { grid-template-columns: 1fr; }
-            /* Mobile: кнопки дій більші для пальців */
+            /* Mobile: кнопки дій — акуратна сітка 3x2 */
             .btn-card-action { padding: 12px 8px; font-size: 12px; min-height: 44px; }
             .card-actions { gap: 6px; }
-            .card-actions .btn-card-action { min-width: 70px; flex: 1 1 calc(33% - 6px); }
+            .card-actions .btn-card-action { min-width: 0; }
             /* Mobile: кнопки рейсів/маршрутів */
             .trip-card-actions { flex-wrap: wrap; gap: 6px; }
             .trip-action-btn { padding: 10px 8px; font-size: 12px; min-height: 44px; flex: 1 1 auto; }
@@ -1686,7 +1685,7 @@ function initMapsAPI() {
 // ================================================================
 // CONFIG
 // ================================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbxat2FxKeugbYctEvwSD_VqSBhSHZm9kEQSkFszNhEiHlYZ8LebmSo3Vl-O0bgC9bgd2g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzFXPSdRiZSwIfNHp4lnGle3TMhj2GUMUZn6LNlnh3HDNBgrfHlwtt6mkA0k6cddaI60g/exec';
 const COL_MAP = {
     pax_id:'PAX_ID', smartId:'Ід_смарт', direction:'Напрям', sourceSheet:'SOURCE_SHEET',
     dateCreated:'Дата створення', name:'Піб', phone:'Телефон пасажира',
