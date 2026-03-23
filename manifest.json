@@ -2,7 +2,7 @@
   "name": "GrescoBus CRM",
   "short_name": "GrescoBus",
   "description": "CRM Пасажири — GrescoBus",
-  "start_url": "./Pasanger_Greskobus.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
