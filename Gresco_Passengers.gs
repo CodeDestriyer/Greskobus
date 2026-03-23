@@ -2147,7 +2147,7 @@ function doPost(e) {
       case 'getPayments':        result = apiGetPayments(body); break;
 
       default:
-        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments' };
+        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments' };
     }
   } catch (err) {
     result = { ok: false, error: err.message };

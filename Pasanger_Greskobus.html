@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GrescoBus">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a3a5e">
+    <meta name="application-name" content="GrescoBus CRM">
     <title>GrescoBus CRM Пасажири v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -773,6 +779,17 @@
             .card-phone { min-width: auto; font-size: 12px; }
             .card-right-section { padding: 4px 6px; }
             .trips-grid { grid-template-columns: 1fr; }
+            /* Mobile: кнопки дій більші для пальців */
+            .btn-card-action { padding: 12px 8px; font-size: 12px; min-height: 44px; }
+            .card-actions { gap: 6px; }
+            .card-actions .btn-card-action { min-width: 70px; flex: 1 1 calc(33% - 6px); }
+            /* Mobile: кнопки рейсів/маршрутів */
+            .trip-card-actions { flex-wrap: wrap; gap: 6px; }
+            .trip-action-btn { padding: 10px 8px; font-size: 12px; min-height: 44px; flex: 1 1 auto; }
+            /* Mobile: details grid 2 колонки замість 4 */
+            .details-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            /* Mobile: messenger popup кнопки більші */
+            .messenger-popup-item { padding: 14px 12px; font-size: 14px; min-height: 48px; }
         }
         @media (min-width: 901px) {
             .side-menu, .side-menu-overlay { display: none !important; }
@@ -865,6 +882,10 @@
                     <span class="side-menu-item-left"><span class="card-direction dir-badge-eu-ua" style="font-size:10px;">EU → UA</span> Європа-Україна</span>
                     <span class="side-menu-item-count" id="mobileCountEuUa">0</span>
                 </div>
+                <div class="side-menu-item" onclick="showArchiveView(); closeSideMenu();">
+                    <span class="side-menu-item-left">📦 Архів</span>
+                    <span class="side-menu-item-count" id="mobileCountArchive">0</span>
+                </div>
             </div>
         </div>
 
@@ -896,20 +917,6 @@
             </div>
         </div>
 
-        <!-- АРХІВ — згорнутий розділ -->
-        <div class="mobile-section">
-            <div class="mobile-section-header" onclick="toggleMobileSection('archive')">
-                <span class="mobile-section-title">📦 АРХІВ</span>
-                <span class="mobile-section-toggle" id="mobileToggleArchive">►</span>
-            </div>
-            <div class="mobile-section-content" id="mobileSectionArchive" style="display:none;">
-                <div class="side-menu-item" onclick="showArchiveView(); closeSideMenu();">
-                    <span class="side-menu-item-left">📦 Архівовані</span>
-                    <span class="side-menu-item-count" id="mobileCountArchive">0</span>
-                </div>
-            </div>
-        </div>
-
         <div style="height:1px;background:rgba(255,255,255,0.1);margin:8px 0;"></div>
         <!-- Кнопка додавання -->
         <div class="side-menu-item" onclick="openAddModal(); closeSideMenu();" style="background:rgba(255,255,255,0.1);">
@@ -922,14 +929,14 @@
 <header class="header">
     <div class="header-top">
         <button class="burger-btn" onclick="openSideMenu()">☰</button>
-        <div class="logo">Esco<span>Express</span></div>
+        <div class="logo">Gresco<span>Bus</span></div>
         <div class="search-box">
             <span class="search-icon">🔍</span>
             <input class="search-input" type="text" id="globalSearch" placeholder="Пошук по ПІБ або телефону..." oninput="onSearchInput()">
         </div>
         <div class="header-right">
             <span class="sync-indicator" id="syncIndicator">🔄 —</span>
-            <div class="user-avatar" onclick="promptManagerName()" title="Натисніть щоб змінити ім'я">OP</div>
+            <div class="user-avatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
         </div>
     </div>
 </header>
@@ -955,6 +962,11 @@
                 <div class="pc-sidebar-item" id="pcEuUa" onclick="showPaxView('eu-ua')">
                     <span><span class="item-icon"><span class="card-direction dir-badge-eu-ua" style="font-size:9px;padding:2px 6px;">EU→UA</span></span><span class="item-text">Європа-Україна</span></span>
                     <span class="item-count" id="pcCountEuUa">0</span>
+                </div>
+
+                <div class="pc-sidebar-item archive" id="pcArchive" onclick="showArchiveView()">
+                    <span><span class="item-icon">📦</span><span class="item-text">Архів</span></span>
+                    <span class="item-count" id="pcCountArchive">0</span>
                 </div>
 
                 <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
@@ -1023,19 +1035,6 @@
             </div>
         </div>
 
-        <!-- Архів -->
-        <div class="pc-sidebar-section">
-            <div class="pc-sidebar-header collapsed" onclick="togglePcSection('archive')">
-                <span class="pc-sidebar-title">📦 АРХІВ</span>
-                <span class="pc-sidebar-toggle" id="pcToggleArchive">▼</span>
-            </div>
-            <div class="pc-sidebar-content collapsed" id="pcSectionArchive">
-                <div class="pc-sidebar-item archive" id="pcArchive" onclick="showArchiveView()">
-                    <span><span class="item-icon">📦</span><span class="item-text">Архівовані</span></span>
-                    <span class="item-count" id="pcCountArchive">0</span>
-                </div>
-            </div>
-        </div>
 
         <!-- Дії -->
         <div class="pc-sidebar-section">
@@ -1165,11 +1164,30 @@
     </div>
 </div>
 
+<!-- MANAGER LOGIN MODAL -->
+<div class="modal-overlay" id="managerModal" onclick="if(event.target===this && getManagerName())closeModal('managerModal')">
+    <div class="modal" style="max-width:360px">
+        <div class="modal-header">
+            <div class="modal-title">👤 Вхід — оберіть менеджера</div>
+            <button class="modal-close" onclick="if(getManagerName())closeModal('managerModal')" style="display:none" id="managerModalClose">✕</button>
+        </div>
+        <div style="padding:16px" id="managerSlots"></div>
+        <div id="installBanner" style="display:none;padding:0 16px 16px">
+            <div style="border-top:1px solid var(--border);padding-top:12px">
+                <button onclick="installApp()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;border-radius:8px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+                    📲 Встановити на пристрій
+                </button>
+                <div style="text-align:center;font-size:10px;color:var(--text-secondary);margin-top:6px">Додати на робочий екран як додаток</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- BOTTOM NAV (Mobile) -->
 <nav class="bottom-nav">
     <button class="nav-item active" id="navPax" onclick="showPaxView('all')"><span>👥</span>Пасажири</button>
-    <button class="nav-item" id="navParcels" onclick="window.open('Crm_Posylky.html','_blank')"><span>📦</span>Посилки</button>
-    <button class="nav-item" onclick="silentSync()"><span>🔄</span>Синхр.</button>
+    <button class="nav-item" id="navParcels" onclick="showToast('📦 Модуль Посилки не підключено. Зверніться до BotiSystem для підключення.', 4000)"><span>📦</span>Посилки</button>
+    <button class="nav-item" onclick="silentSync(true)"><span>🔄</span>Синхр.</button>
     <button class="nav-item" onclick="openColumnConfigurator()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
 </nav>
@@ -1517,6 +1535,117 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- PWA: Icon + Manifest + Install -->
+<script>
+(function() {
+    // Генеруємо іконку 192x192 з canvas
+    function generateAppIcon(size) {
+        var c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        var ctx = c.getContext('2d');
+        // Фон
+        ctx.fillStyle = '#1a3a5e';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, size * 0.18);
+        ctx.fill();
+        // Автобус emoji
+        ctx.font = (size * 0.35) + 'px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🚐', size / 2, size * 0.42);
+        // Текст GB
+        ctx.fillStyle = 'white';
+        ctx.font = '800 ' + (size * 0.22) + 'px Montserrat, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('GRESKO', size / 2, size * 0.65);
+        ctx.fillStyle = '#d90d0d';
+        ctx.font = '800 ' + (size * 0.2) + 'px Montserrat, Arial, sans-serif';
+        ctx.fillText('BUS', size / 2, size * 0.84);
+        return c.toDataURL('image/png');
+    }
+
+    // Створюємо іконки
+    var icon192 = generateAppIcon(192);
+    var icon512 = generateAppIcon(512);
+
+    // Apple touch icon
+    var appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = icon192;
+    document.head.appendChild(appleIcon);
+
+    // Favicon
+    var favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.href = icon192;
+    document.head.appendChild(favicon);
+
+    // Web App Manifest (inline data URI)
+    var manifest = {
+        name: 'GrescoBus CRM',
+        short_name: 'GrescoBus',
+        description: 'CRM Пасажири — GrescoBus',
+        start_url: location.href,
+        display: 'standalone',
+        orientation: 'portrait',
+        theme_color: '#1a3a5e',
+        background_color: '#f5f7fa',
+        icons: [
+            { src: icon192, sizes: '192x192', type: 'image/png' },
+            { src: icon512, sizes: '512x512', type: 'image/png' }
+        ]
+    };
+    var manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    document.head.appendChild(manifestLink);
+})();
+
+// PWA Install prompt
+var deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = '';
+}
+
+function installApp() {
+    if (deferredInstallPrompt) {
+        // Chrome / Android — нативний промпт
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                showToast('GrescoBus встановлено!');
+                var banner = document.getElementById('installBanner');
+                if (banner) banner.style.display = 'none';
+            }
+            deferredInstallPrompt = null;
+        });
+    } else {
+        // iOS / інші — показуємо інструкцію
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+            showToast('Натисніть кнопку "Поділитися" (📤) внизу Safari, потім "На початковий екран"', 6000);
+        } else {
+            showToast('Відкрийте меню браузера (⋮) → "Додати на головний екран" або "Встановити додаток"', 6000);
+        }
+    }
+}
+
+// Показуємо банер встановлення якщо ще не встановлено
+window.addEventListener('DOMContentLoaded', function() {
+    if (!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) {
+        showInstallBanner();
+    }
+});
+</script>
+
 <!-- Google Maps API -->
 <script>
 window.mapsApiReady = false;
@@ -1534,7 +1663,7 @@ function initMapsAPI() {
 // ================================================================
 // CONFIG
 // ================================================================
-const API_URL = 'https://script.google.com/macros/s/AKfycbzXkR8n0wN2vgCd295JDWm2pHeIWzwqtXvAtPFlBeb1qzqCoj0jK6qh2N5kCz42ZSGi9A/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxat2FxKeugbYctEvwSD_VqSBhSHZm9kEQSkFszNhEiHlYZ8LebmSo3Vl-O0bgC9bgd2g/exec';
 const COL_MAP = {
     pax_id:'PAX_ID', smartId:'Ід_смарт', direction:'Напрям', sourceSheet:'SOURCE_SHEET',
     dateCreated:'Дата створення', name:'Піб', phone:'Телефон пасажира',
@@ -1559,8 +1688,12 @@ const OTHER_SECTIONS = [
     { key:'notes', title:'📝 Примітки', fields:['note','noteSms'] },
     { key:'system', title:'🔧 Системні', fields:['pax_id','smartId','dateCreated','sourceSheet','cliId','bookingId'], readonly:true }
 ];
+function getManagerColsKey() {
+    var name = getManagerName() || 'default';
+    return 'gresco_cols_' + name.replace(/\s+/g, '_');
+}
 function getOsnovneFields() {
-    try { const s = localStorage.getItem('esco_osnovne_cols'); if (s) return JSON.parse(s); } catch(e) {}
+    try { var s = localStorage.getItem(getManagerColsKey()); if (s) return JSON.parse(s); } catch(e) {}
     return DEFAULT_OSNOVNE_FIELDS;
 }
 function getDetailSections() {
@@ -1618,29 +1751,103 @@ let vehicleBuilderCount = 0;
 let editingTripCalId = null;
 let paymentsCache = {}; // Кеш платежів: { PAX_ID: [...] }
 
-// Ім'я менеджера — зберігається в localStorage
-function getManagerName() {
-    return localStorage.getItem('esco_manager_name') || '';
+// ================================================================
+// MANAGER LOGIN — 3 слоти, без пароля, localStorage
+// ================================================================
+var MANAGER_SLOTS_KEY = 'gresco_manager_slots';
+var MANAGER_ACTIVE_KEY = 'gresco_manager_name';
+
+function getManagerSlots() {
+    try {
+        var s = localStorage.getItem(MANAGER_SLOTS_KEY);
+        if (s) { var arr = JSON.parse(s); if (Array.isArray(arr) && arr.length === 3) return arr; }
+    } catch(e) {}
+    return ['Менеджер 1', 'Менеджер 2', 'Менеджер 3'];
 }
+
+function saveManagerSlots(slots) {
+    localStorage.setItem(MANAGER_SLOTS_KEY, JSON.stringify(slots));
+}
+
+function getManagerName() {
+    return localStorage.getItem(MANAGER_ACTIVE_KEY) || '';
+}
+
 function setManagerName(name) {
-    localStorage.setItem('esco_manager_name', name);
+    localStorage.setItem(MANAGER_ACTIVE_KEY, name);
     updateAvatarUI();
 }
+
 function updateAvatarUI() {
-    const name = getManagerName();
-    const avatar = document.querySelector('.user-avatar');
+    var name = getManagerName();
+    var avatar = document.querySelector('.user-avatar');
     if (avatar && name) {
-        const parts = name.trim().split(/\s+/);
-        avatar.textContent = parts.map(p => p[0]).join('').substring(0, 2).toUpperCase();
+        var parts = name.trim().split(/\s+/);
+        avatar.textContent = parts.map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
         avatar.title = name;
+    } else if (avatar) {
+        avatar.textContent = '?';
+        avatar.title = 'Увійти';
     }
 }
-function promptManagerName() {
-    const current = getManagerName();
-    const name = prompt('Введіть ваше ім\'я (менеджер):', current);
-    if (name !== null && name.trim()) {
-        setManagerName(name.trim());
+
+function renderManagerSlots() {
+    var slots = getManagerSlots();
+    var active = getManagerName();
+    var hasActive = !!active;
+    var html = '';
+
+    for (var i = 0; i < slots.length; i++) {
+        var isActive = (slots[i] === active);
+        var initials = slots[i].trim().split(/\s+/).map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
+        var colors = ['#3b82f6', '#10b981', '#f59e0b'];
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:8px;border-radius:8px;cursor:pointer;border:2px solid ' + (isActive ? 'var(--accent)' : 'var(--border)') + ';background:' + (isActive ? '#fef2f2' : 'white') + '" onclick="selectManager(' + i + ')">';
+        html += '<div style="width:40px;height:40px;border-radius:50%;background:' + colors[i] + ';display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;flex-shrink:0">' + initials + '</div>';
+        html += '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:var(--text-primary)">' + slots[i] + '</div>';
+        html += '<div style="font-size:11px;color:var(--text-secondary)">' + (isActive ? 'Зараз працює' : 'Натисніть для входу') + '</div></div>';
+        html += '<button onclick="event.stopPropagation();renameManager(' + i + ')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;color:var(--text-secondary)" title="Перейменувати">✏️</button>';
+        html += '</div>';
     }
+
+    document.getElementById('managerSlots').innerHTML = html;
+    // Показувати кнопку закриття тільки якщо вже увійшли
+    var closeBtn = document.getElementById('managerModalClose');
+    if (closeBtn) closeBtn.style.display = hasActive ? '' : 'none';
+}
+
+function selectManager(idx) {
+    var slots = getManagerSlots();
+    setManagerName(slots[idx]);
+    closeModal('managerModal');
+    showToast('Вхід: ' + slots[idx]);
+}
+
+function renameManager(idx) {
+    var slots = getManagerSlots();
+    var newName = prompt('Нове ім\'я для слота ' + (idx + 1) + ':', slots[idx]);
+    if (newName !== null && newName.trim()) {
+        var oldName = slots[idx];
+        var oldKey = 'gresco_cols_' + oldName.replace(/\s+/g, '_');
+        slots[idx] = newName.trim();
+        saveManagerSlots(slots);
+        // Мігруємо налаштування колонок на нове ім'я
+        var oldCols = localStorage.getItem(oldKey);
+        if (oldCols) {
+            var newKey = 'gresco_cols_' + newName.trim().replace(/\s+/g, '_');
+            localStorage.setItem(newKey, oldCols);
+            localStorage.removeItem(oldKey);
+        }
+        // Якщо перейменовуємо активного — оновити активне ім'я
+        if (getManagerName() === oldName) {
+            setManagerName(newName.trim());
+        }
+        renderManagerSlots();
+    }
+}
+
+function openManagerModal() {
+    renderManagerSlots();
+    openModal('managerModal');
 }
 
 // ================================================================
@@ -1669,11 +1876,11 @@ async function apiPost(action, data) {
 // INIT
 // ================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Запит імені менеджера при першому відкритті
-    if (!getManagerName()) {
-        promptManagerName();
-    }
+    // Запит менеджера при першому відкритті
     updateAvatarUI();
+    if (!getManagerName()) {
+        openManagerModal();
+    }
 
     showLoader('Завантаження...');
     Promise.all([
@@ -1699,7 +1906,50 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================================================
 // SILENT SYNC
 // ================================================================
-function silentSync() {
+function silentSync(manual) {
+    if (manual) {
+        // Ручна синхронізація — повна з лоадером та архівом
+        showLoader('🔄 Синхронізація всіх даних...');
+        Promise.all([
+            apiPost('getAll', { sheet: 'all' }),
+            apiPost('getTrips', { filter: {} }),
+            apiPost('getRoutesList', {}),
+            apiPost('getArchive', {})
+        ]).then(([paxRes, tripRes, routeRes, archRes]) => {
+            hideLoader();
+            if (paxRes.ok) { passengers = paxRes.data; applyOptimizedOrder(); }
+            if (tripRes.ok) trips = tripRes.data;
+            if (archRes.ok) archivedPassengers = archRes.rows || [];
+            if (routeRes.ok && routeRes.data) {
+                var newList = routeRes.data;
+                allRouteSheets = newList.map(function(s) {
+                    var existing = allRouteSheets.find(function(e) { return e.sheetName === s.sheetName; });
+                    return { sheetName: s.sheetName, rowCount: s.rowCount,
+                        headers: existing && existing.rows !== null ? existing.headers : [],
+                        rows: existing ? existing.rows : null };
+                });
+                routes = allRouteSheets.filter(s => {
+                    const n = (s.sheetName || '');
+                    return n.startsWith('Маршрут_') && n !== 'Маршрут_Шаблон';
+                });
+                setCount('pcCountRoutes', routes.length);
+                setCount('mobileCountRoutes', routes.length);
+                renderRouteSidebar();
+            }
+            updateAllCounts();
+            updateTripFilterDropdown();
+            updateTripAutoFilterDropdown();
+            render();
+            updateSyncTime();
+            showToast('✅ Оновлено: ' + (passengers ? passengers.length : 0) + ' пасажирів, ' + trips.length + ' рейсів, ' + (archivedPassengers ? archivedPassengers.length : 0) + ' в архіві');
+        }).catch((e) => {
+            hideLoader();
+            showToast('❌ Помилка синхронізації: ' + (e.message || 'мережа'));
+        });
+        return;
+    }
+
+    // Автоматична тиха синхронізація (без лоадера)
     if (document.querySelector('.modal-overlay.show')) return;
     if (document.querySelector('.bottom-sheet-overlay.show')) return;
 
@@ -1708,23 +1958,15 @@ function silentSync() {
         apiPost('getTrips', { filter: {} }),
         apiPost('getRoutesList', {})
     ]).then(([paxRes, tripRes, routeRes]) => {
-        if (paxRes.ok) {
-            passengers = paxRes.data;
-            applyOptimizedOrder(); // Зберігаємо оптимізований порядок після sync
-        }
+        if (paxRes.ok) { passengers = paxRes.data; applyOptimizedOrder(); }
         if (tripRes.ok) trips = tripRes.data;
         if (routeRes.ok && routeRes.data) {
-            // Оновити список маршрутів (без даних — lazy loading)
             var newList = routeRes.data;
-            // Зберегти вже завантажені дані (rows) для кожного аркуша
             allRouteSheets = newList.map(function(s) {
                 var existing = allRouteSheets.find(function(e) { return e.sheetName === s.sheetName; });
-                return {
-                    sheetName: s.sheetName,
-                    rowCount: s.rowCount,
+                return { sheetName: s.sheetName, rowCount: s.rowCount,
                     headers: existing && existing.rows !== null ? existing.headers : [],
-                    rows: existing ? existing.rows : null
-                };
+                    rows: existing ? existing.rows : null };
             });
             routes = allRouteSheets.filter(s => {
                 const n = (s.sheetName || '');
@@ -1950,8 +2192,12 @@ function toggleMobileRoutesList() {
 async function openRoute(idx) {
     activeRouteIdx = idx;
     // Lazy load: завантажити дані аркуша, якщо ще не завантажені
-    if (routes[idx] && routes[idx].rows === null) {
-        await loadRouteSheetData(idx);
+    try {
+        if (routes[idx] && routes[idx].rows === null) {
+            await loadRouteSheetData(idx);
+        }
+    } catch(e) {
+        showToast('❌ Помилка завантаження маршруту: ' + (e.message || ''));
     }
     showRoutesView();
 }
@@ -2161,15 +2407,14 @@ function renderRouteCard(r, idx, sheetName) {
                     </div>`;
                 }).join('')}
             </div>
-            <!-- Кнопки дій для ліда -->
+            <!-- Кнопки дій для ліда: 2 рядки -->
             <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
-                <button class="btn-card-action btn-call" onclick="event.stopPropagation(); window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
-                <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
-                <button class="btn-card-action btn-edit" onclick="event.stopPropagation(); openRouteEditModal('${rteId}','${safeSheet}')">✏️ Редагувати</button>
-                <button class="btn-card-action" style="background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archiveFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">📦 Архівувати</button>
-                <button class="btn-card-action" style="background:#fee2e2;color:#dc2626;" onclick="event.stopPropagation(); deleteFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ З маршруту</button>
-                <button class="btn-card-action" style="background:#7f1d1d;color:white;" onclick="event.stopPropagation(); deleteFromRouteFull('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
-                <button class="btn-card-action" style="background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); transferRouteLeadModal('${rteId}','${safeSheet}')">🔄 Пересадити</button>
+                <button class="btn-card-action btn-call" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
+                <button class="btn-card-action btn-write" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
+                <button class="btn-card-action btn-edit" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); openRouteEditModal('${rteId}','${safeSheet}')">✏️ Редагувати</button>
+                <button class="btn-card-action" style="flex:1 1 calc(33% - 6px);background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); transferRouteLeadModal('${rteId}','${safeSheet}')">🔄 Пересадити</button>
+                <button class="btn-card-action" style="flex:1 1 calc(33% - 6px);background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archiveFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">📦 Архів</button>
+                <button class="btn-card-action btn-delete" style="flex:1 1 calc(33% - 6px)" onclick="event.stopPropagation(); deleteFromRoute('${rteId}','${safeSheet}','${name.replace(/'/g,"\\'")}')">🗑️ Видалити</button>
             </div>
         </div>
     </div>`;
@@ -2566,7 +2811,6 @@ function updateMobileSidebarActive() {
 
 function updateNavActive(tab) {
     document.getElementById('navPax')?.classList.toggle('active', tab === 'pax');
-    document.getElementById('navTrips')?.classList.toggle('active', tab === 'trips');
 }
 
 // ================================================================
@@ -3056,12 +3300,14 @@ function toggleCardActions(id) {
 // phone — телефон пасажира, smartId — ID SmartSender (може бути пустий)
 function openMessengerPopup(phone, smartId) {
     const grid = document.getElementById('messengerGrid');
-    const cleanPhone = (phone || '').replace(/[^+\d]/g, ''); // Залишаємо тільки +цифри
+    const cleanPhone = (phone || '').replace(/[^+\d]/g, '');
+    var smartBtn = (smartId && smartId.trim()) ? `<button class="messenger-popup-item" onclick="openMessenger('smartsender','${smartId}')">🤖 SmartSender</button>` : '';
     grid.innerHTML = `
-        <button class="messenger-popup-item" onclick="openMessenger('viber','${cleanPhone}')">💬 Viber</button>
-        <button class="messenger-popup-item" onclick="openMessenger('telegram','${cleanPhone}')">✈️ Telegram</button>
-        <button class="messenger-popup-item" onclick="openMessenger('whatsapp','${cleanPhone}')">📱 WhatsApp</button>
-        <button class="messenger-popup-item" onclick="openMessenger('smartsender','${smartId || ''}')">🤖 SmartSender</button>
+        <button class="messenger-popup-item" onclick="closeMessengerPopup(); window.open('tel:${cleanPhone}')" style="background:var(--primary);color:white;border-color:var(--primary)">📞 Дзвінок</button>
+        <button class="messenger-popup-item" onclick="openMessenger('viber','${cleanPhone}')" style="background:#7360f2;color:white;border-color:#7360f2">💬 Viber</button>
+        <button class="messenger-popup-item" onclick="openMessenger('telegram','${cleanPhone}')" style="background:#0088cc;color:white;border-color:#0088cc">✈️ Telegram</button>
+        <button class="messenger-popup-item" onclick="openMessenger('whatsapp','${cleanPhone}')" style="background:#25d366;color:white;border-color:#25d366">📱 WhatsApp</button>
+        ${smartBtn}
     `;
     document.getElementById('messengerOverlay').classList.add('show');
 }
@@ -3077,15 +3323,17 @@ function closeMessengerPopup() {
 function openMessenger(type, contact) {
     closeMessengerPopup();
     if (!contact) { showToast('⚠️ Контакт не вказаний'); return; }
+    var phone = contact.replace(/[^+\d]/g, '');
+    var phoneNoPlus = phone.replace('+', '');
     switch (type) {
         case 'viber':
-            window.open('viber://chat?number=' + encodeURIComponent(contact), '_blank');
+            window.open('viber://chat?number=%2B' + phoneNoPlus, '_blank');
             break;
         case 'telegram':
-            window.open('https://t.me/' + contact, '_blank');
+            window.open('https://t.me/+' + phoneNoPlus, '_blank');
             break;
         case 'whatsapp':
-            window.open('https://wa.me/' + contact.replace('+', ''), '_blank');
+            window.open('https://wa.me/' + phoneNoPlus, '_blank');
             break;
         case 'smartsender':
             window.open('https://smartsender.com/contacts/' + encodeURIComponent(contact), '_blank');
@@ -3864,6 +4112,7 @@ function renderTripCard(t) {
             </div>
             <div class="trip-card-actions">
                 <button class="trip-action-btn" onclick="editTrip('${safeCalId}')">✏️ Редагувати</button>
+                <button class="trip-action-btn" onclick="showTripPassengers('${safeCalId}')">👥 Пасажири</button>
                 <button class="trip-action-btn" onclick="archiveTrip('${safeCalId}','${safeCity}','${safeDate}')">📦 Архів</button>
                 <button class="trip-action-btn danger" onclick="deleteTrip('${safeCalId}','${safeCity}','${safeDate}')">🗑️</button>
             </div>
@@ -4685,30 +4934,37 @@ function editTrip(calId) {
 function archiveTrip(calId, city, date) {
     showConfirm('Архівувати рейс «' + city + ' ' + date + '»?', async (yes) => {
         if (!yes) return;
-        showLoader('Архівування...');
-        const res = await apiPost('archiveTrip', { cal_id: calId });
+        showLoader('Архівування рейсу...');
+        var res = await apiPost('archiveTrip', { cal_id: calId });
+        if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || '')); return; }
+        // Після API — оновлюємо дані з сервера перш ніж показати результат
+        var tripRes = await apiPost('getTrips', { filter: {} });
+        if (tripRes.ok) trips = tripRes.data;
+        renderTrips();
+        updateAllCounts();
         hideLoader();
-        if (res.ok) { showToast('✅ Архівовано'); silentSync(); }
-        else showToast('❌ ' + (res.error || ''));
+        showToast('✅ Рейс архівовано');
     });
 }
 
 // Delete trip
 function deleteTrip(calId, city, date) {
-    console.log('[deleteTrip] calId=', calId, 'city=', city, 'date=', date);
-    if (!calId || !calId.trim()) {
+    if (!calId || !String(calId).trim()) {
         showToast('❌ CAL_ID порожній — неможливо видалити');
         return;
     }
     showConfirm('Видалити рейс «' + city + ' ' + date + '»? Пасажири залишаться без рейсу.', async (yes) => {
         if (!yes) return;
-        showLoader('Видалення...');
-        console.log('[deleteTrip] Sending API:', { cal_id: calId });
-        const res = await apiPost('deleteTrip', { cal_id: calId });
-        console.log('[deleteTrip] Response:', res);
+        showLoader('Видалення рейсу...');
+        var res = await apiPost('deleteTrip', { cal_id: calId });
+        if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || 'Невідома помилка')); return; }
+        // Після API — оновлюємо дані з сервера перш ніж показати результат
+        var tripRes = await apiPost('getTrips', { filter: {} });
+        if (tripRes.ok) trips = tripRes.data;
+        renderTrips();
+        updateAllCounts();
         hideLoader();
-        if (res.ok) { showToast('✅ Видалено'); silentSync(); }
-        else showToast('❌ ' + (res.error || 'Невідома помилка'));
+        showToast('✅ Рейс видалено');
     });
 }
 
@@ -4919,7 +5175,7 @@ function saveColumnConfig() {
         alert('Оберіть хоча б одну колонку');
         return;
     }
-    localStorage.setItem('esco_osnovne_cols', JSON.stringify(colCfgTemp));
+    localStorage.setItem(getManagerColsKey(), JSON.stringify(colCfgTemp));
     closeModal('columnModal');
     // Re-render open details
     if (openDetailsId) {
@@ -4940,10 +5196,10 @@ function resetDefaultColumns() {
 function showLoader(text) { document.getElementById('loaderText').textContent = text || 'Завантаження...'; document.getElementById('globalLoader').classList.add('show'); }
 function hideLoader() { document.getElementById('globalLoader').classList.remove('show'); }
 
-function showToast(msg) {
+function showToast(msg, duration) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    setTimeout(() => t.classList.remove('show'), duration || 2500);
 }
 
 function showConfirm(text, cb) {
