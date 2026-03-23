@@ -882,6 +882,10 @@
                     <span class="side-menu-item-left"><span class="card-direction dir-badge-eu-ua" style="font-size:10px;">EU → UA</span> Європа-Україна</span>
                     <span class="side-menu-item-count" id="mobileCountEuUa">0</span>
                 </div>
+                <div class="side-menu-item" onclick="showArchiveView(); closeSideMenu();">
+                    <span class="side-menu-item-left">📦 Архів</span>
+                    <span class="side-menu-item-count" id="mobileCountArchive">0</span>
+                </div>
             </div>
         </div>
 
@@ -910,20 +914,6 @@
             </div>
             <div class="mobile-section-content" id="mobileSectionRoutes" style="display:none;">
                 <div id="mobileRoutesList"></div>
-            </div>
-        </div>
-
-        <!-- АРХІВ — згорнутий розділ -->
-        <div class="mobile-section">
-            <div class="mobile-section-header" onclick="toggleMobileSection('archive')">
-                <span class="mobile-section-title">📦 АРХІВ</span>
-                <span class="mobile-section-toggle" id="mobileToggleArchive">►</span>
-            </div>
-            <div class="mobile-section-content" id="mobileSectionArchive" style="display:none;">
-                <div class="side-menu-item" onclick="showArchiveView(); closeSideMenu();">
-                    <span class="side-menu-item-left">📦 Архівовані</span>
-                    <span class="side-menu-item-count" id="mobileCountArchive">0</span>
-                </div>
             </div>
         </div>
 
@@ -972,6 +962,11 @@
                 <div class="pc-sidebar-item" id="pcEuUa" onclick="showPaxView('eu-ua')">
                     <span><span class="item-icon"><span class="card-direction dir-badge-eu-ua" style="font-size:9px;padding:2px 6px;">EU→UA</span></span><span class="item-text">Європа-Україна</span></span>
                     <span class="item-count" id="pcCountEuUa">0</span>
+                </div>
+
+                <div class="pc-sidebar-item archive" id="pcArchive" onclick="showArchiveView()">
+                    <span><span class="item-icon">📦</span><span class="item-text">Архів</span></span>
+                    <span class="item-count" id="pcCountArchive">0</span>
                 </div>
 
                 <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
@@ -1040,19 +1035,6 @@
             </div>
         </div>
 
-        <!-- Архів -->
-        <div class="pc-sidebar-section">
-            <div class="pc-sidebar-header collapsed" onclick="togglePcSection('archive')">
-                <span class="pc-sidebar-title">📦 АРХІВ</span>
-                <span class="pc-sidebar-toggle" id="pcToggleArchive">▼</span>
-            </div>
-            <div class="pc-sidebar-content collapsed" id="pcSectionArchive">
-                <div class="pc-sidebar-item archive" id="pcArchive" onclick="showArchiveView()">
-                    <span><span class="item-icon">📦</span><span class="item-text">Архівовані</span></span>
-                    <span class="item-count" id="pcCountArchive">0</span>
-                </div>
-            </div>
-        </div>
 
         <!-- Дії -->
         <div class="pc-sidebar-section">
@@ -1204,10 +1186,10 @@
 <!-- BOTTOM NAV (Mobile) -->
 <nav class="bottom-nav">
     <button class="nav-item active" id="navPax" onclick="showPaxView('all')"><span>👥</span>Пасажири</button>
-    <button class="nav-item" id="navTrips" onclick="showTripsView()"><span>🚐</span>Рейси</button>
+    <button class="nav-item" id="navParcels" onclick="window.open('Crm_Posylky.html','_blank')"><span>📦</span>Посилки</button>
     <button class="nav-item" onclick="silentSync(true)"><span>🔄</span>Синхр.</button>
+    <button class="nav-item" onclick="openColumnConfigurator()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
-    <button class="nav-item" onclick="openSideMenu()"><span>☰</span>Меню</button>
 </nav>
 
 <!-- COLUMN CONFIGURATOR MODAL -->
