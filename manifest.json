@@ -2,21 +2,21 @@
   "name": "GrescoBus CRM",
   "short_name": "GrescoBus",
   "description": "CRM Пасажири — GrescoBus",
-  "start_url": "/greskobus/",
-  "scope": "/greskobus/",
+  "start_url": "./Pasanger_Greskobus.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#1a3a5e",
   "background_color": "#f5f7fa",
   "icons": [
     {
-      "src": "/greskobus/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/greskobus/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

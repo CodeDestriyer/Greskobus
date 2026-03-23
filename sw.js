@@ -1,5 +1,5 @@
 // GrescoBus Service Worker — потрібен для PWA встановлення
-var CACHE_NAME = 'grescobus-v1';
+var CACHE_NAME = 'grescobus-v2';
 
 // Install — просто активуємось
 self.addEventListener('install', function(e) {
