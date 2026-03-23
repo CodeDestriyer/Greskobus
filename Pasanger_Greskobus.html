@@ -652,6 +652,29 @@
         .toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: 6px; font-size: 11px; font-weight: 600; display: none; z-index: 3000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .toast.show { display: block; }
 
+        /* Onboarding Tutorial */
+        .onboard-overlay { position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        .onboard-overlay.show { opacity: 1; pointer-events: auto; }
+        .onboard-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9998; }
+        .onboard-spotlight { position: absolute; z-index: 9999; border-radius: 12px; box-shadow: 0 0 0 4000px rgba(0,0,0,0.7); transition: all 0.4s ease; pointer-events: none; }
+        .onboard-card { position: fixed; z-index: 10000; background: white; border-radius: 16px; padding: 20px; max-width: 320px; width: calc(100% - 40px); box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: onboardSlideIn 0.4s ease; }
+        @keyframes onboardSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .onboard-step-icon { font-size: 40px; text-align: center; margin-bottom: 8px; }
+        .onboard-step-title { font-size: 16px; font-weight: 800; color: #1a3a5e; text-align: center; margin-bottom: 6px; }
+        .onboard-step-text { font-size: 13px; color: #64748b; text-align: center; line-height: 1.5; margin-bottom: 16px; }
+        .onboard-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 14px; }
+        .onboard-dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
+        .onboard-dot.active { background: var(--primary); width: 20px; border-radius: 4px; }
+        .onboard-btns { display: flex; gap: 8px; }
+        .onboard-btn { flex: 1; padding: 11px; border: none; border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .onboard-btn.skip { background: #f1f5f9; color: #64748b; }
+        .onboard-btn.next { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+        .onboard-btn.next:active { transform: scale(0.97); }
+        .onboard-progress { height: 3px; background: #e2e8f0; border-radius: 3px; margin-bottom: 14px; overflow: hidden; }
+        .onboard-progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 3px; transition: width 0.4s ease; }
+        .onboard-tutorial-btn { width: 100%; padding: 10px; background: #f0f9ff; border: 1px dashed var(--primary); color: var(--primary); border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+        .onboard-tutorial-btn:hover { background: #e0f2fe; }
+
         /* Duplicate warning */
         .duplicate-warning { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 8px 12px; font-size: 11px; margin-bottom: 8px; display: none; }
         .duplicate-warning.show { display: block; }
@@ -1206,6 +1229,9 @@
                 <div style="text-align:center;font-size:10px;color:var(--text-secondary);margin-top:6px">Додати на робочий екран як додаток</div>
             </div>
         </div>
+        <div style="padding:0 16px 16px">
+            <button class="onboard-tutorial-btn" onclick="closeModal('managerModal');startOnboarding()">🎓 Пройти навчання</button>
+        </div>
     </div>
 </div>
 
@@ -1345,6 +1371,23 @@
         <div class="bs-footer">
             <button class="bs-btn cancel" onclick="closeTripForm()">Скасувати</button>
             <button class="bs-btn primary" onclick="saveTrip()">💾 Створити рейс</button>
+        </div>
+    </div>
+</div>
+
+<!-- ONBOARDING TUTORIAL -->
+<div class="onboard-overlay" id="onboardOverlay">
+    <div class="onboard-backdrop" onclick="onboardSkip()"></div>
+    <div class="onboard-spotlight" id="onboardSpotlight"></div>
+    <div class="onboard-card" id="onboardCard">
+        <div class="onboard-step-icon" id="onboardIcon"></div>
+        <div class="onboard-step-title" id="onboardTitle"></div>
+        <div class="onboard-step-text" id="onboardText"></div>
+        <div class="onboard-progress"><div class="onboard-progress-bar" id="onboardProgress"></div></div>
+        <div class="onboard-dots" id="onboardDots"></div>
+        <div class="onboard-btns">
+            <button class="onboard-btn skip" onclick="onboardSkip()">Пропустити</button>
+            <button class="onboard-btn next" id="onboardNext" onclick="onboardNext()">Далі →</button>
         </div>
     </div>
 </div>
@@ -1883,6 +1926,7 @@ function selectManager(idx) {
     setManagerName(slots[idx]);
     closeModal('managerModal');
     showToast('Вхід: ' + slots[idx]);
+    checkOnboardingAutoStart();
 }
 
 function renameManager(idx) {
@@ -2029,6 +2073,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => { hideLoader(); render(); });
 
     setInterval(silentSync, 60000);
+
+    // Автозапуск навчання якщо вже залогінений і ще не проходив
+    checkOnboardingAutoStart();
 });
 
 // ================================================================
@@ -6999,6 +7046,162 @@ function routeBulkDeleteFull() {
             showToast('❌ Помилка: ' + e.message);
         }
     });
+}
+
+// ================================================================
+// ONBOARDING TUTORIAL — анімоване навчання
+// ================================================================
+const ONBOARD_KEY = 'gresco_onboard_done';
+let onboardStep = 0;
+const onboardSteps = [
+    {
+        icon: '👤',
+        title: 'Вхід та менеджер',
+        text: 'Натисніть на свій аватар у правому верхньому куті, щоб обрати або змінити менеджера. Кожен слот — окремий профіль з власними налаштуваннями. Натисніть ✏️ щоб змінити ім\'я.',
+        target: '#userAvatar',
+        position: 'bottom'
+    },
+    {
+        icon: '📲',
+        title: 'Встановити на телефон',
+        text: 'Щоб працювати як додаток — відкрийте GrescoBus у Chrome на телефоні. Натисніть меню ⋮ → "Додати на головний екран". На iPhone: кнопка "Поділитися" 📤 → "На Початковий екран".',
+        target: null,
+        position: 'center'
+    },
+    {
+        icon: '☰',
+        title: 'Головне меню',
+        text: 'Натисніть ☰ зліва зверху щоб відкрити бічне меню. Тут фільтри по напрямках, рейси, маршрути та архів.',
+        target: '.burger-btn',
+        position: 'bottom'
+    },
+    {
+        icon: '➕',
+        title: 'Додати пасажира',
+        text: 'Натисніть "Додати" внизу екрану або в бічному меню. Є SMS-парсер — вставте текст повідомлення і дані заповняться автоматично!',
+        target: '.bottom-nav',
+        position: 'top'
+    },
+    {
+        icon: '☑️',
+        title: 'Масові дії',
+        text: 'Поставте галочки на картках пасажирів — з\'явиться панель дій: призначити на рейс 🚐, додати до маршруту 🗺️, оптимізувати ⚡ або архівувати 📦.',
+        target: null,
+        position: 'center'
+    },
+    {
+        icon: '🔄',
+        title: 'Синхронізація',
+        text: 'Дані синхронізуються автоматично кожну хвилину. Зелена точка на аватарі = все ОК. Натисніть 🔄 "Синхр." для ручного оновлення. Успіхів у роботі!',
+        target: null,
+        position: 'center'
+    }
+];
+
+function startOnboarding() {
+    onboardStep = 0;
+    document.getElementById('onboardOverlay').classList.add('show');
+    renderOnboardStep();
+}
+
+function renderOnboardStep() {
+    const step = onboardSteps[onboardStep];
+    const total = onboardSteps.length;
+
+    document.getElementById('onboardIcon').textContent = step.icon;
+    document.getElementById('onboardTitle').textContent = step.title;
+    document.getElementById('onboardText').textContent = step.text;
+    document.getElementById('onboardProgress').style.width = ((onboardStep + 1) / total * 100) + '%';
+
+    // Dots
+    let dotsHtml = '';
+    for (let i = 0; i < total; i++) {
+        dotsHtml += '<div class="onboard-dot' + (i === onboardStep ? ' active' : '') + '"></div>';
+    }
+    document.getElementById('onboardDots').innerHTML = dotsHtml;
+
+    // Button text
+    const nextBtn = document.getElementById('onboardNext');
+    nextBtn.textContent = onboardStep === total - 1 ? 'Готово ✓' : 'Далі →';
+
+    // Spotlight
+    const spotlight = document.getElementById('onboardSpotlight');
+    const card = document.getElementById('onboardCard');
+
+    if (step.target) {
+        const el = document.querySelector(step.target);
+        if (el) {
+            const rect = el.getBoundingClientRect();
+            const pad = 8;
+            spotlight.style.display = 'block';
+            spotlight.style.left = (rect.left - pad) + 'px';
+            spotlight.style.top = (rect.top - pad) + 'px';
+            spotlight.style.width = (rect.width + pad * 2) + 'px';
+            spotlight.style.height = (rect.height + pad * 2) + 'px';
+
+            // Position card relative to spotlight
+            if (step.position === 'bottom') {
+                card.style.top = (rect.bottom + 16) + 'px';
+                card.style.bottom = 'auto';
+                card.style.left = '50%';
+                card.style.transform = 'translateX(-50%)';
+            } else {
+                card.style.bottom = (window.innerHeight - rect.top + 16) + 'px';
+                card.style.top = 'auto';
+                card.style.left = '50%';
+                card.style.transform = 'translateX(-50%)';
+            }
+        } else {
+            spotlight.style.display = 'none';
+            card.style.top = '50%';
+            card.style.left = '50%';
+            card.style.bottom = 'auto';
+            card.style.transform = 'translate(-50%, -50%)';
+        }
+    } else {
+        spotlight.style.display = 'none';
+        card.style.top = '50%';
+        card.style.left = '50%';
+        card.style.bottom = 'auto';
+        card.style.transform = 'translate(-50%, -50%)';
+    }
+
+    // Re-trigger animation
+    card.style.animation = 'none';
+    card.offsetHeight;
+    card.style.animation = '';
+}
+
+function onboardNext() {
+    if (onboardStep < onboardSteps.length - 1) {
+        onboardStep++;
+        renderOnboardStep();
+    } else {
+        onboardFinish();
+    }
+}
+
+function onboardSkip() {
+    onboardFinish();
+}
+
+function onboardFinish() {
+    document.getElementById('onboardOverlay').classList.remove('show');
+    localStorage.setItem(ONBOARD_KEY, Date.now());
+    // Логуємо проходження навчання на сервер
+    const completed = onboardStep >= onboardSteps.length - 1;
+    apiPost('logOnboarding', {
+        completed: completed,
+        stepsViewed: onboardStep + 1,
+        totalSteps: onboardSteps.length
+    });
+}
+
+// Автозапуск при першому вході
+function checkOnboardingAutoStart() {
+    if (!localStorage.getItem(ONBOARD_KEY) && getManagerName()) {
+        setTimeout(startOnboarding, 800);
+    }
 }
 </script>
 </body>

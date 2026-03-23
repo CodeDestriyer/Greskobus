@@ -2200,6 +2200,13 @@ function doPost(e) {
       case 'heartbeat':          result = apiHeartbeat(body); break;
       case 'getOnlineManagers':  result = apiGetOnlineManagers(body); break;
 
+      // ── ONBOARDING (навчання) ──
+      case 'logOnboarding':
+        var status = body.completed ? 'Завершено' : ('Пропущено на кроці ' + body.stepsViewed + '/' + body.totalSteps);
+        writeLog(manager, 'Навчання', status);
+        result = { ok: true };
+        break;
+
       default:
         result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments, heartbeat, getOnlineManagers' };
     }
