@@ -45,7 +45,7 @@
         .search-input::placeholder { color: rgba(255,255,255,0.6); }
         .search-input:focus { background: rgba(255,255,255,0.25); }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.7; }
-        .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; overflow: visible; padding-right: 4px; }
         .sync-indicator { display: none; }
         .user-avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0; cursor: pointer; position: relative; }
         .avatar-status { position: absolute; bottom: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #1a3a5e; }
@@ -54,7 +54,7 @@
         .avatar-status.loading { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
         .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 2px; }
         .presence-dot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 10px; position: relative; cursor: default; flex-shrink: 0; overflow: visible; }
-        .presence-dot::after { content: ''; position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; background: #22c55e; border-radius: 50%; border: 2.5px solid #1a3a5e; box-shadow: 0 0 6px rgba(34,197,94,0.6); z-index: 5; }
+        .presence-dot::after { content: ''; position: absolute; bottom: 0px; right: 0px; width: 10px; height: 10px; background: #22c55e; border-radius: 50%; border: 2px solid #1a3a5e; box-shadow: 0 0 6px rgba(34,197,94,0.6); z-index: 5; pointer-events: none; }
 
         /* MAIN LAYOUT */
         .main-layout { display: flex; min-height: calc(100vh - 52px); }
