@@ -1688,8 +1688,12 @@ const OTHER_SECTIONS = [
     { key:'notes', title:'📝 Примітки', fields:['note','noteSms'] },
     { key:'system', title:'🔧 Системні', fields:['pax_id','smartId','dateCreated','sourceSheet','cliId','bookingId'], readonly:true }
 ];
+function getManagerColsKey() {
+    var name = getManagerName() || 'default';
+    return 'gresco_cols_' + name.replace(/\s+/g, '_');
+}
 function getOsnovneFields() {
-    try { const s = localStorage.getItem('gresco_osnovne_cols'); if (s) return JSON.parse(s); } catch(e) {}
+    try { var s = localStorage.getItem(getManagerColsKey()); if (s) return JSON.parse(s); } catch(e) {}
     return DEFAULT_OSNOVNE_FIELDS;
 }
 function getDetailSections() {
@@ -1823,8 +1827,16 @@ function renameManager(idx) {
     var newName = prompt('Нове ім\'я для слота ' + (idx + 1) + ':', slots[idx]);
     if (newName !== null && newName.trim()) {
         var oldName = slots[idx];
+        var oldKey = 'gresco_cols_' + oldName.replace(/\s+/g, '_');
         slots[idx] = newName.trim();
         saveManagerSlots(slots);
+        // Мігруємо налаштування колонок на нове ім'я
+        var oldCols = localStorage.getItem(oldKey);
+        if (oldCols) {
+            var newKey = 'gresco_cols_' + newName.trim().replace(/\s+/g, '_');
+            localStorage.setItem(newKey, oldCols);
+            localStorage.removeItem(oldKey);
+        }
         // Якщо перейменовуємо активного — оновити активне ім'я
         if (getManagerName() === oldName) {
             setManagerName(newName.trim());
@@ -5160,7 +5172,7 @@ function saveColumnConfig() {
         alert('Оберіть хоча б одну колонку');
         return;
     }
-    localStorage.setItem('gresco_osnovne_cols', JSON.stringify(colCfgTemp));
+    localStorage.setItem(getManagerColsKey(), JSON.stringify(colCfgTemp));
     closeModal('columnModal');
     // Re-render open details
     if (openDetailsId) {
