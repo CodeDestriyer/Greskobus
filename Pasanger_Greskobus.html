@@ -1186,7 +1186,7 @@
 <!-- BOTTOM NAV (Mobile) -->
 <nav class="bottom-nav">
     <button class="nav-item active" id="navPax" onclick="showPaxView('all')"><span>👥</span>Пасажири</button>
-    <button class="nav-item" id="navParcels" onclick="window.open('Crm_Posylky.html','_blank')"><span>📦</span>Посилки</button>
+    <button class="nav-item" id="navParcels" onclick="showToast('📦 Модуль Посилки не підключено. Зверніться до BotiSystem для підключення.', 4000)"><span>📦</span>Посилки</button>
     <button class="nav-item" onclick="silentSync(true)"><span>🔄</span>Синхр.</button>
     <button class="nav-item" onclick="openColumnConfigurator()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
@@ -2192,8 +2192,12 @@ function toggleMobileRoutesList() {
 async function openRoute(idx) {
     activeRouteIdx = idx;
     // Lazy load: завантажити дані аркуша, якщо ще не завантажені
-    if (routes[idx] && routes[idx].rows === null) {
-        await loadRouteSheetData(idx);
+    try {
+        if (routes[idx] && routes[idx].rows === null) {
+            await loadRouteSheetData(idx);
+        }
+    } catch(e) {
+        showToast('❌ Помилка завантаження маршруту: ' + (e.message || ''));
     }
     showRoutesView();
 }
@@ -2807,7 +2811,6 @@ function updateMobileSidebarActive() {
 
 function updateNavActive(tab) {
     document.getElementById('navPax')?.classList.toggle('active', tab === 'pax');
-    document.getElementById('navTrips')?.classList.toggle('active', tab === 'trips');
 }
 
 // ================================================================
