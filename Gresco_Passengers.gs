@@ -2196,8 +2196,12 @@ function doPost(e) {
       // ── FINANCE ──
       case 'getPayments':        result = apiGetPayments(body); break;
 
+      // ── PRESENCE (онлайн менеджери) ──
+      case 'heartbeat':          result = apiHeartbeat(body); break;
+      case 'getOnlineManagers':  result = apiGetOnlineManagers(body); break;
+
       default:
-        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments' };
+        result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments, heartbeat, getOnlineManagers' };
     }
 
     // Логуємо успішні операції запису
@@ -2223,4 +2227,48 @@ function doPost(e) {
 
   return ContentService.createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ================================================================
+// PRESENCE — Онлайн-статус менеджерів (через CacheService)
+// ================================================================
+
+function apiHeartbeat(body) {
+  var name = (body.manager || '').trim();
+  if (!name) return { ok: false, error: 'manager is required' };
+
+  var cache = CacheService.getScriptCache();
+  var key = 'presence_' + name;
+  var data = JSON.stringify({ name: name, ts: new Date().toISOString() });
+  cache.put(key, data, 90);
+
+  var knownRaw = cache.get('presence_known_managers') || '[]';
+  var known = JSON.parse(knownRaw);
+  if (known.indexOf(name) === -1) {
+    known.push(name);
+    cache.put('presence_known_managers', JSON.stringify(known), 21600);
+  }
+
+  return { ok: true };
+}
+
+function apiGetOnlineManagers(body) {
+  var cache = CacheService.getScriptCache();
+  var knownRaw = cache.get('presence_known_managers') || '[]';
+  var known = JSON.parse(knownRaw);
+  var online = [];
+  if (known.length > 0) {
+    var keys = known.map(function(n) { return 'presence_' + n; });
+    var cached = cache.getAll(keys);
+    for (var i = 0; i < known.length; i++) {
+      var val = cached['presence_' + known[i]];
+      if (val) {
+        try {
+          var parsed = JSON.parse(val);
+          online.push({ name: parsed.name, ts: parsed.ts });
+        } catch (e) {}
+      }
+    }
+  }
+  return { ok: true, managers: online };
 }
