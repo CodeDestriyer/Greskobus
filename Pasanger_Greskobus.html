@@ -298,6 +298,9 @@
         .badge-unpaid { background: #fee2e2; color: #dc2626; }
         .badge-notrip { background: #fef3c7; color: #d97706; }
         .badge-debt { background: #fee2e2; color: #dc2626; font-weight: 800; }
+        .badge-new24 { background: #fef3c7; color: #d97706; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px; animation: pulse-new24 2s ease-in-out infinite; }
+        @keyframes pulse-new24 { 0%,100%{opacity:1} 50%{opacity:0.6} }
+        .new24-dot { width: 8px; height: 8px; background: #f59e0b; border-radius: 50%; display: inline-block; margin-left: 6px; animation: pulse-new24 1.5s ease-in-out infinite; }
 
         /* TRIPS VIEW */
         .trips-view { display: none; }
@@ -874,6 +877,10 @@
                     <span class="side-menu-item-left">📊 Всі пасажири</span>
                     <span class="side-menu-item-count" id="mobileCountAll">0</span>
                 </div>
+                <div class="side-menu-item" id="mobileNew24" onclick="showPaxView('new24'); closeSideMenu();">
+                    <span class="side-menu-item-left">🆕 Нові (24 год)</span>
+                    <span class="side-menu-item-count" id="mobileCountNew24" style="background:#fef3c7;color:#d97706;">0</span>
+                </div>
                 <div class="side-menu-item" id="mobileUaEu" onclick="showPaxView('ua-eu'); closeSideMenu();">
                     <span class="side-menu-item-left"><span class="card-direction dir-badge-ua-eu" style="font-size:10px;">UA → EU</span> Україна-Європа</span>
                     <span class="side-menu-item-count" id="mobileCountUaEu">0</span>
@@ -954,6 +961,10 @@
                 <div class="pc-sidebar-item active" id="pcAllPax" onclick="showPaxView('all')">
                     <span><span class="item-icon">📊</span><span class="item-text">Всі</span></span>
                     <span class="item-count" id="pcCountAll">0</span>
+                </div>
+                <div class="pc-sidebar-item" id="pcNew24" onclick="showPaxView('new24')">
+                    <span><span class="item-icon">🆕</span><span class="item-text">Нові (24 год)</span></span>
+                    <span class="item-count" id="pcCountNew24" style="background:#fef3c7;color:#d97706;">0</span>
                 </div>
                 <div class="pc-sidebar-item" id="pcUaEu" onclick="showPaxView('ua-eu')">
                     <span><span class="item-icon"><span class="card-direction dir-badge-ua-eu" style="font-size:9px;padding:2px 6px;">UA→EU</span></span><span class="item-text">Україна-Європа</span></span>
@@ -2818,7 +2829,7 @@ function promptDeleteLinkedSheets(baseName) {
 }
 
 function updatePcSidebarActive() {
-    ['pcAllPax','pcUaEu','pcEuUa','pcTrips','pcArchive'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    ['pcAllPax','pcNew24','pcUaEu','pcEuUa','pcTrips','pcArchive'].forEach(id => document.getElementById(id)?.classList.remove('active'));
     document.querySelectorAll('.route-sidebar-item').forEach(el => el.classList.remove('active'));
     if (currentView === 'archive') {
         document.getElementById('pcArchive')?.classList.add('active');
@@ -2827,19 +2838,19 @@ function updatePcSidebarActive() {
     } else if (currentView === 'trips') {
         document.getElementById('pcTrips')?.classList.add('active');
     } else {
-        const map = { all:'pcAllPax', 'ua-eu':'pcUaEu', 'eu-ua':'pcEuUa' };
+        const map = { all:'pcAllPax', new24:'pcNew24', 'ua-eu':'pcUaEu', 'eu-ua':'pcEuUa' };
         document.getElementById(map[currentDir] || 'pcAllPax')?.classList.add('active');
     }
 }
 
 function updateMobileSidebarActive() {
-    ['mobileAllPax','mobileUaEu','mobileEuUa','mobileTrips'].forEach(id => document.getElementById(id)?.classList.remove('active'));
+    ['mobileAllPax','mobileNew24','mobileUaEu','mobileEuUa','mobileTrips'].forEach(id => document.getElementById(id)?.classList.remove('active'));
     if (currentView === 'routes') {
         // active стан через openRoute
     } else if (currentView === 'trips') {
         document.getElementById('mobileTrips')?.classList.add('active');
     } else {
-        const map = { all:'mobileAllPax', 'ua-eu':'mobileUaEu', 'eu-ua':'mobileEuUa' };
+        const map = { all:'mobileAllPax', new24:'mobileNew24', 'ua-eu':'mobileUaEu', 'eu-ua':'mobileEuUa' };
         document.getElementById(map[currentDir] || 'mobileAllPax')?.classList.add('active');
     }
 }
@@ -2856,15 +2867,25 @@ function updateAllCounts() {
     const uaeu = allPax.filter(p => isDir(p, 'ua-eu'));
     const euua = allPax.filter(p => isDir(p, 'eu-ua'));
 
+    const new24 = allPax.filter(p => isNew24h(p));
+
     setCount('pcCountAll', allPax.length);
+    setCount('pcCountNew24', new24.length);
     setCount('pcCountUaEu', uaeu.length);
     setCount('pcCountEuUa', euua.length);
     setCount('pcCountTrips', trips.length);
     setCount('pcCountArchive', archivedPassengers.length);
     setCount('mobileCountAll', allPax.length);
+    setCount('mobileCountNew24', new24.length);
     setCount('mobileCountUaEu', uaeu.length);
     setCount('mobileCountEuUa', euua.length);
     setCount('mobileCountTrips', trips.length);
+
+    // Показати/сховати точку-індикатор нових лідів
+    const dot24pc = document.getElementById('pcNew24Dot');
+    const dot24mob = document.getElementById('mobileNew24Dot');
+    if (dot24pc) dot24pc.style.display = new24.length > 0 ? 'inline-block' : 'none';
+    if (dot24mob) dot24mob.style.display = new24.length > 0 ? 'inline-block' : 'none';
 }
 
 function setCount(id, n) { const el = document.getElementById(id); if (el) el.textContent = n; }
@@ -2881,6 +2902,17 @@ function isDir(p, dir) {
     if (dir === 'ua-eu') return startsUA;
     if (dir === 'eu-ua') return startsEU;
     return true;
+}
+
+// ================================================================
+// NEW 24H HELPER
+// ================================================================
+function isNew24h(p) {
+    const raw = p['Дата створення'];
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return false;
+    return (Date.now() - d.getTime()) < 24 * 60 * 60 * 1000;
 }
 
 // ================================================================
@@ -2901,7 +2933,8 @@ function getFilteredPassengers() {
 
     return passengers.filter(p => {
         if ((p['Статус CRM'] || 'Активний') === 'Архів') return false;
-        if (currentDir !== 'all' && !isDir(p, currentDir)) return false;
+        if (currentDir === 'new24') { if (!isNew24h(p)) return false; }
+        else if (currentDir !== 'all' && !isDir(p, currentDir)) return false;
         if (leadStatus !== 'all' && p['Статус ліда'] !== leadStatus) return false;
         if (payStatus !== 'all' && p['Статус оплати'] !== payStatus) return false;
         if (tripFilter === 'none' && p['CAL_ID']) return false;
@@ -2976,6 +3009,7 @@ function renderCard(p) {
     const debt = Math.max(0, priceN + wpN - depN);
 
     const statusClass = leadStatus === 'Новий' ? 'status-new' : leadStatus === 'В роботі' ? 'status-work' : leadStatus === 'Підтверджено' ? 'status-confirmed' : leadStatus === 'Відмова' ? 'status-refused' : '';
+    const isRecent24h = isNew24h(p);
     const isOpen = openDetailsId === id;
     const isActionsOpen = openActionsId === id;
 
@@ -3055,6 +3089,7 @@ function renderCard(p) {
                             ${cf.includes('pax_id') ? `<span class="card-id">${id}</span>` : ''}
                             ${cf.includes('smartId') ? `<span class="card-smart-id">SS: ${smartId || '—'}</span>` : ''}
                             ${cf.includes('name') ? `<span class="card-name">${name}</span>` : ''}
+                            ${isRecent24h ? '<span class="badge badge-new24">🆕 NEW</span>' : ''}
                             ${cf.includes('leadStatus') ? lsBadge : ''} ${cf.includes('payStatus') ? payBadge : ''}
                             ${cf.includes('debt') && debt > 0 ? '<span class="badge badge-debt">Борг: '+debt+'</span>' : ''}
                         </div>
