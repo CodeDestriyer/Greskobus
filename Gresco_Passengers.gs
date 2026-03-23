@@ -1621,7 +1621,10 @@ function apiFreeSeat(params) {
 function apiGetRoutesList(params) {
   var cache = CacheService.getScriptCache();
   var cacheKey = 'routesList_v2';
-  var cached = cache.get(cacheKey);
+  if (params && params.forceRefresh) {
+    cache.remove(cacheKey);
+  }
+  var cached = (!params || !params.forceRefresh) ? cache.get(cacheKey) : null;
   if (cached) {
     return { ok: true, data: JSON.parse(cached), fromCache: true };
   }

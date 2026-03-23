@@ -1167,13 +1167,13 @@
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
                         <button class="bs-btn" style="background:rgba(124,58,237,0.9);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(124,58,237,0.5);" onclick="optimizeRouteOrder()">⚡ Оптимізувати порядок</button>
-                        <button class="bs-btn" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(255,255,255,0.3);" onclick="loadRoutes()">🔄 Оновити</button>
+                        <button class="bs-btn" style="background:rgba(255,255,255,0.2);color:white;font-size:11px;padding:8px 14px;border:1px solid rgba(255,255,255,0.3);" onclick="loadRoutes(true)">🔄 Оновити</button>
                     </div>
                 </div>
             </div>
             <div id="routeHeaderEmpty" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
                 <h2 style="margin:0;font-size:18px;color:var(--text-primary);">🗺️ Маршрути</h2>
-                <button class="bs-btn" style="background:var(--primary);color:white;font-size:11px;padding:8px 14px;" onclick="loadRoutes()">🔄 Оновити</button>
+                <button class="bs-btn" style="background:var(--primary);color:white;font-size:11px;padding:8px 14px;" onclick="loadRoutes(true)">🔄 Оновити</button>
             </div>
             <!-- Route filters -->
             <div id="routeFiltersBar" style="display:none;margin-bottom:12px;">
@@ -2311,7 +2311,7 @@ function showRoutesView() {
     else renderRoutes();
 }
 
-async function loadRoutes() {
+async function loadRoutes(forceRefresh) {
     const loading = document.getElementById('routesLoading');
     const errEl = document.getElementById('routesError');
     const list = document.getElementById('routesList');
@@ -2322,7 +2322,7 @@ async function loadRoutes() {
 
     try {
         // ШВИДКИЙ запит: тільки імена аркушів + кількість рядків
-        const res = await apiPost('getRoutesList', {});
+        const res = await apiPost('getRoutesList', { forceRefresh: !!forceRefresh });
         loading.style.display = 'none';
         if (res.ok && res.data) {
             // Зберігаємо список аркушів (rows ще не завантажені)
