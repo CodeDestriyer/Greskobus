@@ -2025,10 +2025,41 @@ function startPresence() {
     _presenceTimer = setInterval(fetchOnlineManagers, PRESENCE_CHECK_INTERVAL);
 }
 
+function getDeviceInfo() {
+    var ua = navigator.userAgent || '';
+    var device = 'Desktop';
+    var os = 'Unknown';
+    var browser = 'Unknown';
+
+    // OS
+    if (/iPhone/.test(ua)) { device = 'iPhone'; os = 'iOS'; }
+    else if (/iPad/.test(ua)) { device = 'iPad'; os = 'iOS'; }
+    else if (/Android/.test(ua)) {
+        os = 'Android';
+        device = /Mobile/.test(ua) ? 'Android Phone' : 'Android Tablet';
+    }
+    else if (/Mac OS/.test(ua)) { os = 'macOS'; }
+    else if (/Windows/.test(ua)) { os = 'Windows'; }
+    else if (/Linux/.test(ua)) { os = 'Linux'; }
+
+    // Browser
+    if (/CriOS|Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
+    else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+    else if (/Firefox|FxiOS/.test(ua)) browser = 'Firefox';
+    else if (/Edg/.test(ua)) browser = 'Edge';
+    else if (/Opera|OPR/.test(ua)) browser = 'Opera';
+
+    // PWA mode
+    var isPWA = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+    return { device: device, os: os, browser: browser, pwa: !!isPWA };
+}
+
 function sendHeartbeat() {
     var name = getManagerName();
     if (!name) return;
-    apiPost('heartbeat', { manager: name }).catch(function() {});
+    var devInfo = getDeviceInfo();
+    apiPost('heartbeat', { manager: name, device: devInfo.device, os: devInfo.os, browser: devInfo.browser, pwa: devInfo.pwa }).catch(function() {});
 }
 
 function fetchOnlineManagers() {
@@ -2054,7 +2085,14 @@ function renderPresenceBar(managers) {
     bar.innerHTML = others.map(function(m, i) {
         var initials = m.name.trim().split(/\s+/).map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
         var color = colors[i % colors.length];
-        return '<div class="hdr-avatar presence-dot" style="background:' + color + '" title="' + m.name + ' — онлайн">' +
+        var deviceIcon = '';
+        if (m.device) {
+            if (m.device.indexOf('iPhone') >= 0 || m.device.indexOf('Android Phone') >= 0) deviceIcon = '\uD83D\uDCF1';
+            else if (m.device.indexOf('iPad') >= 0 || m.device.indexOf('Tablet') >= 0) deviceIcon = '\uD83D\uDCBB';
+            else deviceIcon = '\uD83D\uDDA5\uFE0F';
+        }
+        var title = m.name + ' — онлайн' + (m.device ? '\n' + deviceIcon + ' ' + m.device : '');
+        return '<div class="hdr-avatar presence-dot" style="background:' + color + '" title="' + title + '">' +
             initials + '</div>';
     }).join('');
 }

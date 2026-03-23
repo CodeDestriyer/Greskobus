@@ -2245,9 +2245,15 @@ function apiHeartbeat(body) {
   var name = (body.manager || '').trim();
   if (!name) return { ok: false, error: 'manager is required' };
 
+  var device = body.device || '';
+  var os = body.os || '';
+  var browser = body.browser || '';
+  var pwa = body.pwa ? 'PWA' : 'Browser';
+  var deviceLabel = [device, os, browser, pwa].filter(Boolean).join(' / ');
+
   var cache = CacheService.getScriptCache();
   var key = 'presence_' + name;
-  var data = JSON.stringify({ name: name, ts: new Date().toISOString() });
+  var data = JSON.stringify({ name: name, ts: new Date().toISOString(), device: deviceLabel });
   cache.put(key, data, 90);
 
   var knownRaw = cache.get('presence_known_managers') || '[]';
@@ -2255,6 +2261,14 @@ function apiHeartbeat(body) {
   if (known.indexOf(name) === -1) {
     known.push(name);
     cache.put('presence_known_managers', JSON.stringify(known), 21600);
+  }
+
+  // Логуємо вхід з нового пристрою (раз на 10 хвилин на менеджера)
+  var loginKey = 'device_log_' + name;
+  var lastLog = cache.get(loginKey);
+  if (!lastLog || lastLog !== deviceLabel) {
+    cache.put(loginKey, deviceLabel, 600); // 10 хв
+    writeLog(name, 'Вхід', deviceLabel);
   }
 
   return { ok: true };
@@ -2273,7 +2287,7 @@ function apiGetOnlineManagers(body) {
       if (val) {
         try {
           var parsed = JSON.parse(val);
-          online.push({ name: parsed.name, ts: parsed.ts });
+          online.push({ name: parsed.name, ts: parsed.ts, device: parsed.device || '' });
         } catch (e) {}
       }
     }
