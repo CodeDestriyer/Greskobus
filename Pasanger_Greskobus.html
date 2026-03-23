@@ -1897,7 +1897,7 @@ async function apiPost(action, data) {
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action, ...data })
+            body: JSON.stringify({ action, manager: getManagerName(), ...data })
         });
         return await res.json();
     } catch (e) {

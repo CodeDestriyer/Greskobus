@@ -91,6 +91,33 @@ function getSheet(name) {
   return SpreadsheetApp.openById(SS_ID).getSheetByName(name);
 }
 
+// ── ЛОГУВАННЯ в Archive_crm → аркуш "Логи" ──
+var LOG_COLS = ['Дата','Менеджер','Дія','Деталі','PAX_ID','CAL_ID','RTE_ID'];
+
+function writeLog(manager, action, details, ids) {
+  try {
+    var archSS = SpreadsheetApp.openById(DB.ARCHIVE);
+    var logSheet = archSS.getSheetByName('Логи');
+    if (!logSheet) {
+      logSheet = archSS.insertSheet('Логи');
+      logSheet.getRange(1, 1, 1, LOG_COLS.length).setValues([LOG_COLS]);
+      logSheet.getRange(1, 1, 1, LOG_COLS.length).setFontWeight('bold');
+    }
+    ids = ids || {};
+    logSheet.appendRow([
+      now(),
+      manager || '',
+      action || '',
+      details || '',
+      ids.pax_id || '',
+      ids.cal_id || '',
+      ids.rte_id || ''
+    ]);
+  } catch(e) {
+    // Логування не повинно ламати основну операцію
+  }
+}
+
 function genId(prefix) {
   var d = Utilities.formatDate(new Date(), 'Europe/Kiev', 'yyyyMMdd');
   var r = Math.random().toString(36).substr(2, 4).toUpperCase();
@@ -2080,7 +2107,36 @@ function doPost(e) {
   }
 
   var action = body.action || '';
+  var manager = body.manager || '';
   var result = { ok: false, error: 'Unknown action: ' + action };
+
+  // Дії що потребують логування (запис/зміна даних)
+  var LOGGED_ACTIONS = {
+    'addPassenger': 'Додано пасажира',
+    'clonePassenger': 'Клоновано пасажира',
+    'updateField': 'Оновлено поле',
+    'updatePassenger': 'Оновлено пасажира',
+    'bulkUpdateField': 'Масове оновлення',
+    'assignTrip': 'Призначено рейс',
+    'unassignTrip': 'Знято з рейсу',
+    'reassignTrip': 'Пересадка на рейс',
+    'deletePassenger': 'Видалено пасажира',
+    'bulkDelete': 'Масове видалення',
+    'archivePassenger': 'Архівовано пасажира',
+    'restorePassenger': 'Відновлено з архіву',
+    'moveDirection': 'Зміна напряму',
+    'createTrip': 'Створено рейс',
+    'updateTrip': 'Оновлено рейс',
+    'archiveTrip': 'Архівовано рейс',
+    'deleteTrip': 'Видалено рейс',
+    'duplicateTrip': 'Дубльовано рейс',
+    'addToRoute': 'Додано в маршрут',
+    'createRoute': 'Створено маршрут',
+    'deleteRoute': 'Видалено маршрут',
+    'updateRouteField': 'Оновлено поле маршруту',
+    'assignSeat': 'Призначено місце',
+    'freeSeat': 'Звільнено місце'
+  };
 
   try {
     switch (action) {
@@ -2149,6 +2205,24 @@ function doPost(e) {
       default:
         result = { ok: false, error: 'Unknown action: ' + action + '. Available: getAll, getOne, getPassengersByTrip, getStats, checkDuplicates, suggestTrips, addPassenger, clonePassenger, updateField, updatePassenger, bulkUpdateField, assignTrip, unassignTrip, reassignTrip, deletePassenger, bulkDelete, archivePassenger, restorePassenger, getArchive, deleteFromArchive, moveDirection, getTrips, getTrip, createTrip, updateTrip, archiveTrip, deleteTrip, duplicateTrip, getRoutesList, getRouteSheet, getRoutes, addToRoute, createRoute, deleteRoute, deleteLinkedSheets, updateRouteField, getAutopark, getAutoSeats, getSeating, assignSeat, freeSeat, getPayments' };
     }
+
+    // Логуємо успішні операції запису
+    if (result.ok && LOGGED_ACTIONS[action]) {
+      var logDetails = '';
+      if (body.col) logDetails = body.col + ' = ' + body.value;
+      else if (body.name) logDetails = body.name;
+      else if (body.pax_ids) logDetails = body.pax_ids.length + ' записів';
+      else if (body.reason) logDetails = body.reason;
+      else if (result.pax_id) logDetails = result.pax_id;
+      else if (result.cal_ids) logDetails = result.cal_ids.join(', ');
+
+      writeLog(manager, LOGGED_ACTIONS[action], logDetails, {
+        pax_id: body.pax_id || (body.pax_ids ? body.pax_ids[0] : '') || result.pax_id || '',
+        cal_id: body.cal_id || body.new_cal_id || '',
+        rte_id: body.rte_id || ''
+      });
+    }
+
   } catch (err) {
     result = { ok: false, error: err.message };
   }
