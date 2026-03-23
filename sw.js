@@ -21,8 +21,9 @@ self.addEventListener('activate', function(e) {
 
 // Fetch — network first, fallback to cache
 self.addEventListener('fetch', function(e) {
-  // Пропускаємо API запити (Google Apps Script)
-  if (e.request.url.includes('script.google.com') ||
+  // Пропускаємо не-http(s) запити та API запити
+  if (!e.request.url.startsWith('http') ||
+      e.request.url.includes('script.google.com') ||
       e.request.url.includes('googleapis.com') ||
       e.request.method !== 'GET') {
     return;
