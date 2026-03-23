@@ -1,5 +1,5 @@
 // ================================================================
-// EscoExpress_Passengers.gs — CRM Пасажири (менеджери)
+// GrescoBus_Passengers.gs — CRM Пасажири (менеджери)
 // Живе в таблиці: Passengers_crm_v4
 // Deploy: Web App → доступ "Будь-хто"
 // ================================================================
@@ -12,13 +12,13 @@ var DATA_START = 2;
 
 // ── ВСІ ТАБЛИЦІ СИСТЕМИ (SpreadsheetApp.openById) ──
 var DB = {
-  PASSENGERS: '1lgaCHqWBIa6oFjFWfD8m58sLwbvQjmeje2gx3YAnBCo',
-  POSYLKI:    '1_vfEhdLEM2SVTBiu_3eDilMs1HlKxvPrJBbiHYjgrJo',
-  MARHRUT:    '10SZhKV08BJyvWoMwhT0iddtWzYrDYFjCM8xgqViuE3Y',
-  KLIYENTU:   '1KW2Vh_E7OxggNB_NOzWmVM8siHzHr_mG8C939YXDC38',
-  FINANCE:    '1AhID7Ust45sA4PCAUjWJz515qnxzQGSj5wGQ7K8Jbu0',
-  CONFIG:     '1hZ67tuQYukugO_TjNsOS3IjovBR5hWMg-JmGAq5udBE',
-  ARCHIVE:    '19Ftljah5eX07RLHJaBrvYV7hStxspxcJVi6VATGZvF0'
+  PASSENGERS: '1yxQI5oB0_LijN4KikojHYDJMdqMoYYsC0powMnoq3D4',
+  POSYLKI:    '1gdtxnVu7KsFKiMdxeZa-1P4YPsftjI2AI7nGclQtQYE',
+  MARHRUT:    '1oVeSgtk70xaK1rrRWIvNN7rWT4_3x28F7ZV7jwCc05I',
+  KLIYENTU:   '1NX6rG11sA2Ze8lbnceynFIxb6pIrBCe4e0Ot30cpWHc',
+  FINANCE:    '1XOqdYTyBFDriYexjKpJnIva6-OvBZv6M3TUSNNB3s4Y',
+  CONFIG:     '1z2b_n1-kgpAKgu09i-oIXlLM_X7heEpA4sxuT_rGR5A',
+  ARCHIVE:    '1bukpVyGioG5oweSZEfzFvmjI5DBDPYojwS7_ZfQHf54'
 };
 
 // Головна таблиця цього скрипта
@@ -2045,7 +2045,7 @@ function doGet(e) {
   try {
     switch (action) {
       case 'ping':
-        result = { ok: true, message: 'EscoExpress CRM v3 API', version: '3.0', timestamp: new Date().toISOString() };
+        result = { ok: true, message: 'GrescoBus CRM v3 API', version: '3.0', timestamp: new Date().toISOString() };
         break;
       case 'getAll':
         result = apiGetAll({ sheet: e.parameter.sheet || 'all', filter: {} });
