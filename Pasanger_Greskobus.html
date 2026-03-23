@@ -7120,9 +7120,10 @@ const OB_CATS = [
         steps: [
             { t: '.nav-item[onclick*="openAddModal"]', title: '➕ Додати пасажира', desc: 'Заповніть ПІБ і телефон. Є SMS-парсер — вставте текст і дані заповняться автоматично!' },
             { t: '.search-box', title: '🔍 Пошук', desc: 'Введіть ПІБ або телефон — список фільтрується на льоту' },
-            { t: null, title: '✏️ Редагування', desc: 'Натисніть на картку → розгорнуться деталі. Кожне поле редагується на місці, зміни зберігаються одразу' },
-            { t: null, title: '📱 Месенджери', desc: 'На картці натисніть іконку телефону → Viber, Telegram, WhatsApp для зв\'язку з клієнтом' },
-            { t: null, title: '💰 Фінанси', desc: 'В деталях картки вкладка "Фінанси": ціна, завдаток, борг. Статус оплати оновлюється автоматично' }
+            { t: '.lead-card', title: '📋 Натисніть на картку', desc: 'Картка розгорнеться і покаже деталі: ПІБ, адреси, дати, примітки. Кожне поле можна редагувати на місці!', act: 'expand' },
+            { t: '.card-actions-toggle', title: '▼ Стрілка справа', desc: 'Натисніть ▼ — з\'являться кнопки: 📞 Дзвінок, ✉️ Писати, ✏️ Редагувати, 🚐 Рейс, 📦 Архів, 🗑️ Видалити', act: 'actions' },
+            { t: '.card-checkbox', title: '☑️ Галочка зліва', desc: 'Поставте галочку на картці — внизу з\'явиться панель масових дій', act: 'check' },
+            { t: '#bulkToolbar', title: '⚡ Панель масових дій', desc: '🚐 Рейс, 🗺️ Маршрут, ⚡ Оптимізація, 📦 Архів — все для обраних пасажирів', act: 'showBulk' }
         ]
     },
     {
@@ -7204,11 +7205,47 @@ function startOnboarding() { obOpenCatalog(); }
 function openOnboardCatalog() { obOpenCatalog(); }
 function closeOnboardCatalog() { obCloseCatalog(); }
 
+// ── Виконати дію для кроку ──
+function obDoAction(act) {
+    // Знаходимо першу картку пасажира
+    const firstCard = document.querySelector('.lead-card');
+    if (!firstCard) return;
+    const paxId = firstCard.getAttribute('data-pax-id');
+    if (!paxId) return;
+
+    if (act === 'expand') {
+        // Розгорнути деталі першої картки
+        if (openDetailsId !== paxId) toggleDetails(paxId);
+    } else if (act === 'actions') {
+        // Показати панель дій першої картки
+        if (openDetailsId) { openDetailsId = null; render(); }
+        if (openActionsId !== paxId) { openActionsId = paxId; render(); }
+    } else if (act === 'check') {
+        // Поставити галочку на першій картці
+        openActionsId = null; openDetailsId = null;
+        if (!selectedIds.has(paxId)) { selectedIds.add(paxId); updateBulkToolbar(); render(); }
+    } else if (act === 'showBulk') {
+        // Показати bulk toolbar (якщо нема вибраних — вибрати першого)
+        if (selectedIds.size === 0 && paxId) { selectedIds.add(paxId); updateBulkToolbar(); render(); }
+    }
+}
+
+// ── Прибрати демо-зміни ──
+function obCleanup() {
+    if (openDetailsId) { openDetailsId = null; }
+    if (openActionsId) { openActionsId = null; }
+    if (selectedIds.size > 0) { selectedIds.clear(); updateBulkToolbar(); }
+    render();
+}
+
 // ── Render step ──
 function obRender() {
     const s = _obSteps[_obStep], total = _obSteps.length;
     const spotlight = document.getElementById('obSpotlight');
     const tip = document.getElementById('obTooltip');
+
+    // Виконати дію (розгорнути картку, показати чекбокс тощо)
+    if (s.act) obDoAction(s.act);
 
     document.getElementById('obTitle').textContent = s.title;
     document.getElementById('obDesc').textContent = s.desc;
@@ -7220,10 +7257,33 @@ function obRender() {
     bh += '<button class="ob-btn ob-btn-next" onclick="obNext()">' + (_obStep === total - 1 ? 'Готово ✓' : 'Далі →') + '</button>';
     document.getElementById('obBtns').innerHTML = bh;
 
-    // Position spotlight + tooltip near target element
-    const el = s.t ? document.querySelector(s.t) : null;
+    // Невелика затримка щоб DOM оновився після action
+    setTimeout(function() { obPosition(s); }, 50);
+}
+
+function obPosition(s) {
+    const spotlight = document.getElementById('obSpotlight');
+    const tip = document.getElementById('obTooltip');
+
+    // Для act-кроків шукаємо реальний елемент після дії
+    let el = null;
+    if (s.act === 'expand') {
+        el = document.querySelector('.card-details.show');
+    } else if (s.act === 'actions') {
+        el = document.querySelector('.card-actions.show');
+    } else if (s.act === 'check') {
+        el = document.querySelector('.card-checkbox:checked');
+        if (el) el = el.closest('.card-checkbox-wrap') || el;
+    } else if (s.act === 'showBulk') {
+        el = document.querySelector('#bulkToolbar.show') || document.getElementById('bulkToolbar');
+    } else if (s.t) {
+        el = document.querySelector(s.t);
+    }
+
     if (el) {
         const r = el.getBoundingClientRect();
+        // Якщо елемент невидимий або за межами екрану — fallback на center
+        if (r.width === 0 && r.height === 0) { obPositionCenter(spotlight, tip); return; }
         const pad = 6;
         spotlight.style.display = 'block';
         spotlight.style.left = (r.left - pad) + 'px';
@@ -7231,45 +7291,48 @@ function obRender() {
         spotlight.style.width = (r.width + pad * 2) + 'px';
         spotlight.style.height = (r.height + pad * 2) + 'px';
 
-        // Decide: tooltip below or above element
         const spaceBelow = window.innerHeight - r.bottom;
-        const tipH = 130; // approx tooltip height
+        const tipH = 130;
         tip.classList.remove('arrow-top', 'arrow-bottom', 'arrow-none');
 
         if (spaceBelow > tipH + 20) {
-            // Below
             tip.style.top = (r.bottom + 12) + 'px';
             tip.style.bottom = 'auto';
             tip.classList.add('arrow-top');
         } else {
-            // Above
             tip.style.top = 'auto';
             tip.style.bottom = (window.innerHeight - r.top + 12) + 'px';
             tip.classList.add('arrow-bottom');
         }
-        // Horizontal: try to align left with element, but keep within screen
         let left = Math.max(16, Math.min(r.left, window.innerWidth - 316));
         tip.style.left = left + 'px';
         tip.style.right = 'auto';
-        // Arrow position relative to element center
+        tip.style.transform = 'none';
         const arrowPos = Math.max(16, Math.min(r.left + r.width / 2 - left, 280));
         tip.style.setProperty('--arrow-left', arrowPos + 'px');
-    } else {
-        // No target — center tooltip
-        spotlight.style.display = 'none';
-        tip.classList.remove('arrow-top', 'arrow-bottom');
-        tip.classList.add('arrow-none');
-        tip.style.top = '50%';
-        tip.style.left = '50%';
-        tip.style.right = 'auto';
-        tip.style.bottom = 'auto';
-        tip.style.transform = 'translate(-50%, -50%)';
-    }
-    // Reset transform when positioned near element
-    if (el) tip.style.transform = 'none';
 
-    // Re-trigger animation
+        // Скрол до елемента якщо не видно
+        if (r.top < 40 || r.bottom > window.innerHeight - 20) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(function() { obPosition(s); }, 400);
+            return;
+        }
+    } else {
+        obPositionCenter(spotlight, tip);
+    }
+
     tip.style.animation = 'none'; tip.offsetHeight; tip.style.animation = '';
+}
+
+function obPositionCenter(spotlight, tip) {
+    spotlight.style.display = 'none';
+    tip.classList.remove('arrow-top', 'arrow-bottom');
+    tip.classList.add('arrow-none');
+    tip.style.top = '50%';
+    tip.style.left = '50%';
+    tip.style.right = 'auto';
+    tip.style.bottom = 'auto';
+    tip.style.transform = 'translate(-50%, -50%)';
 }
 
 function obNext() {
@@ -7283,6 +7346,7 @@ function obSkip() { obFinish(false); }
 
 function obFinish(completed) {
     document.getElementById('obOverlay').classList.remove('show');
+    obCleanup(); // прибрати демо-розгортання карток, галочки тощо
     if (completed && _obCat) obMarkCatDone(_obCat.id);
     localStorage.setItem(OB_KEY, Date.now());
     apiPost('logOnboarding', {
