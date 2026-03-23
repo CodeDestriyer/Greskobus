@@ -1169,7 +1169,7 @@
 <nav class="bottom-nav">
     <button class="nav-item active" id="navPax" onclick="showPaxView('all')"><span>👥</span>Пасажири</button>
     <button class="nav-item" id="navParcels" onclick="window.open('Crm_Posylky.html','_blank')"><span>📦</span>Посилки</button>
-    <button class="nav-item" onclick="silentSync()"><span>🔄</span>Синхр.</button>
+    <button class="nav-item" onclick="silentSync(true)"><span>🔄</span>Синхр.</button>
     <button class="nav-item" onclick="openColumnConfigurator()"><span>⚙️</span>Колонки</button>
     <button class="nav-item" onclick="openAddModal()"><span>➕</span>Додати</button>
 </nav>
@@ -1699,9 +1699,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================================================
 // SILENT SYNC
 // ================================================================
-function silentSync() {
+function silentSync(manual) {
     if (document.querySelector('.modal-overlay.show')) return;
     if (document.querySelector('.bottom-sheet-overlay.show')) return;
+
+    if (manual) showToast('🔄 Синхронізація...');
 
     Promise.all([
         apiPost('getAll', { sheet: 'all' }),
@@ -1710,13 +1712,11 @@ function silentSync() {
     ]).then(([paxRes, tripRes, routeRes]) => {
         if (paxRes.ok) {
             passengers = paxRes.data;
-            applyOptimizedOrder(); // Зберігаємо оптимізований порядок після sync
+            applyOptimizedOrder();
         }
         if (tripRes.ok) trips = tripRes.data;
         if (routeRes.ok && routeRes.data) {
-            // Оновити список маршрутів (без даних — lazy loading)
             var newList = routeRes.data;
-            // Зберегти вже завантажені дані (rows) для кожного аркуша
             allRouteSheets = newList.map(function(s) {
                 var existing = allRouteSheets.find(function(e) { return e.sheetName === s.sheetName; });
                 return {
@@ -1739,7 +1739,10 @@ function silentSync() {
         updateTripAutoFilterDropdown();
         render();
         updateSyncTime();
-    }).catch(() => {});
+        if (manual) showToast('✅ Синхронізовано! Пасажирів: ' + (passengers ? passengers.length : 0));
+    }).catch((e) => {
+        if (manual) showToast('❌ Помилка синхронізації: ' + (e.message || 'мережа'));
+    });
 }
 
 function updateSyncTime() {
