@@ -163,8 +163,10 @@
 
         /* CARDS */
         .cards-list { display: flex; flex-direction: column; gap: 8px; }
-        .lead-card { background: white; border-radius: 8px; box-shadow: var(--shadow); border-left: 4px solid var(--border); position: relative; }
+        .lead-card { background: white; border-radius: 8px; box-shadow: var(--shadow); border-left: 4px solid var(--border); position: relative; transition: background 0.5s; }
         .lead-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .lead-card.just-added { animation: highlightNew 2s ease-out; }
+        @keyframes highlightNew { 0%{background:#fef9c3;box-shadow:0 0 20px rgba(245,158,11,0.4)} 100%{background:white;box-shadow:var(--shadow)} }
         .lead-card.status-new { border-left-color: var(--warning); }
         .lead-card.status-work { border-left-color: var(--info); }
         .lead-card.status-confirmed { border-left-color: var(--success); }
@@ -1784,6 +1786,7 @@ let tripDateFilter = '';
 let tripAutoFilter = 'all';
 let openDetailsId = null;
 let openActionsId = null;
+let justAddedPaxId = null; // ID щойно доданого ліда (для підсвітки)
 let activeDetailTab = {}; // { paxId: sectionKey } — зберігає активну вкладку деталей
 let selectedIds = new Set();
 let editingField = null;
@@ -3132,8 +3135,9 @@ function renderCard(p) {
     }
 
     var cf = getCardFields();
+    const justAddedClass = justAddedPaxId === id ? 'just-added' : '';
 
-    return `<div class="lead-card ${statusClass} ${selectedIds.has(id)?'selected':''}">
+    return `<div class="lead-card ${statusClass} ${selectedIds.has(id)?'selected':''} ${justAddedClass}" data-pax-id="${id}">
         <div class="card-header" onclick="smartToggleDetails(event, '${id}')">
             <div class="card-header-top">
                 <div class="card-checkbox-wrap" onclick="event.stopPropagation()">
@@ -3406,6 +3410,13 @@ function toggleDetails(id) {
         openDetailsId = id;
         const p = passengers.find(x => x['PAX_ID'] === id);
         if (p) {
+            // При відкритті деталей — знімаємо статус "Новий" → "В роботі"
+            if (p['Статус ліда'] === 'Новий') {
+                p['Статус ліда'] = 'В роботі';
+                const sheet = p._sheet || '';
+                apiPost('updatePassenger', { pax_id: id, sheet, data: { leadStatus: 'В роботі' } });
+                updateAllCounts();
+            }
             const el = document.getElementById('details-' + id);
             if (el) el.innerHTML = renderDetails(p);
         }
@@ -4102,11 +4113,21 @@ async function savePassenger() {
         }
         selectedFormCalId = '';
 
-        // Одразу закриваємо модалку і показуємо ліда
+        // Одразу закриваємо модалку і показуємо ліда зверху
         hideLoader();
         closeModal('passengerModal');
+        justAddedPaxId = res.pax_id;
         updateAllCounts();
         render();
+
+        // Скрол до нового ліда + підсвітка
+        setTimeout(() => {
+            const el = document.querySelector('[data-pax-id="' + res.pax_id + '"]');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Прибираємо підсвітку через 3 секунди
+            setTimeout(() => { justAddedPaxId = null; }, 3000);
+        }, 100);
+
         showToast('✅ Пасажир додано: ' + res.pax_id);
 
         // Фонова синхронізація — підтягне точні дані з сервера
