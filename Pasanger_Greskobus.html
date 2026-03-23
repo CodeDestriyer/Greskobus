@@ -3962,12 +3962,12 @@ function parseSmsText() {
 
     // 2. Телефон: міжнародні (+41.., +49.., +380..) та українські (0XX..., 380...)
     let phone = '';
-    // Міжнародний формат: +XX... (від 9 до 15 цифр, можливі пробіли/тире)
-    const intlMatch = raw.match(/(\+[\d\s\-]{9,18})/);
+    // Міжнародний формат: +XX... (від 9 до 15 цифр, можливі пробіли/тире/дужки)
+    const intlMatch = raw.match(/(\+[\d\s\-()]{9,22})/);
     // Український формат: 0XXXXXXXXX або 380XXXXXXXXX
     const uaMatch = raw.match(/(?<!\d)\+?3?8?(0\d{9})(?!\d)/);
     if (intlMatch) {
-        phone = intlMatch[1].replace(/[\s\-]/g, '');
+        phone = intlMatch[1].replace(/[\s\-()]/g, '');
     } else if (uaMatch) {
         phone = '+380' + uaMatch[1].slice(1);
     }
