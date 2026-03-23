@@ -54,6 +54,7 @@
         .avatar-status.loading { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
         .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 2px; }
         .presence-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; cursor: default; flex-shrink: 0; overflow: visible; }
+        .presence-dot::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 11px; height: 11px; background: #22c55e; border-radius: 50%; border: 2px solid #1a3a5e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
 
         /* MAIN LAYOUT */
         .main-layout { display: flex; min-height: calc(100vh - 52px); }
@@ -1954,9 +1955,8 @@ function renderPresenceBar(managers) {
     bar.innerHTML = others.map(function(m, i) {
         var initials = m.name.trim().split(/\s+/).map(function(p) { return p[0]; }).join('').substring(0, 2).toUpperCase();
         var color = colors[i % colors.length];
-        var syncClass = document.getElementById('avatarStatus')?.className.replace('avatar-status','').trim() || 'ok';
         return '<div class="presence-dot" style="background:' + color + '" title="' + m.name + ' — онлайн">' +
-            initials + '<span class="avatar-status ' + syncClass + '"></span></div>';
+            initials + '</div>';
     }).join('');
 }
 
@@ -2123,13 +2123,8 @@ function updateSyncTime() {
 }
 
 function setSyncStatus(status) {
-    // Оновлюємо точку на своєму аватарі
     const dot = document.getElementById('avatarStatus');
     if (dot) dot.className = 'avatar-status ' + status;
-    // Оновлюємо точки на аватарах інших менеджерів
-    document.querySelectorAll('.presence-dot .avatar-status').forEach(function(el) {
-        el.className = 'avatar-status ' + status;
-    });
 }
 
 // ================================================================
