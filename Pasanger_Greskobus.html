@@ -48,10 +48,10 @@
         .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; overflow: visible; padding-right: 4px; }
         .sync-indicator { display: none; }
         .user-avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0; cursor: pointer; position: relative; overflow: visible; }
-        .avatar-status { position: absolute; bottom: -2px; right: -2px; width: 11px; height: 11px; border-radius: 50%; border: 2px solid #1a3a5e; }
-        .avatar-status.ok { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
-        .avatar-status.error { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
-        .avatar-status.loading { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        .user-avatar::after { content: ''; position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #1a3a5e; z-index: 10; background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        .user-avatar.sync-ok::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); animation: none; }
+        .user-avatar.sync-error::after { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
+        .user-avatar.sync-loading::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
         .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 2px; }
         .presence-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; cursor: default; flex-shrink: 0; overflow: visible; }
         .presence-dot::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 11px; height: 11px; background: #22c55e; border-radius: 50%; border: 2px solid #1a3a5e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
@@ -953,7 +953,7 @@
         </div>
         <div class="header-right">
             <div class="presence-bar" id="presenceBar"></div>
-            <div class="user-avatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?<span class="avatar-status loading" id="avatarStatus"></span></div>
+            <div class="user-avatar sync-loading" id="userAvatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
         </div>
     </div>
 </header>
@@ -2123,8 +2123,11 @@ function updateSyncTime() {
 }
 
 function setSyncStatus(status) {
-    const dot = document.getElementById('avatarStatus');
-    if (dot) dot.className = 'avatar-status ' + status;
+    const avatar = document.getElementById('userAvatar');
+    if (avatar) {
+        avatar.classList.remove('sync-ok', 'sync-error', 'sync-loading');
+        avatar.classList.add('sync-' + status);
+    }
 }
 
 // ================================================================
