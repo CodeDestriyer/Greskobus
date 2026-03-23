@@ -1,5 +1,5 @@
 // ================================================================
-// Gresco_Passengers.gs — CRM Пасажири (менеджери)
+// GrescoBus_Passengers.gs — CRM Пасажири (менеджери)
 // Живе в таблиці: Passengers_crm_v4
 // Deploy: Web App → доступ "Будь-хто"
 // ================================================================
@@ -2045,7 +2045,7 @@ function doGet(e) {
   try {
     switch (action) {
       case 'ping':
-        result = { ok: true, message: 'Gresco CRM v3 API', version: '3.0', timestamp: new Date().toISOString() };
+        result = { ok: true, message: 'GrescoBus CRM v3 API', version: '3.0', timestamp: new Date().toISOString() };
         break;
       case 'getAll':
         result = apiGetAll({ sheet: e.parameter.sheet || 'all', filter: {} });
