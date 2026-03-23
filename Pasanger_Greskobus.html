@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GrescoBus">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a3a5e">
+    <meta name="application-name" content="GrescoBus CRM">
     <title>GrescoBus CRM Пасажири v2</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -1173,6 +1179,14 @@
             <button class="modal-close" onclick="if(getManagerName())closeModal('managerModal')" style="display:none" id="managerModalClose">✕</button>
         </div>
         <div style="padding:16px" id="managerSlots"></div>
+        <div id="installBanner" style="display:none;padding:0 16px 16px">
+            <div style="border-top:1px solid var(--border);padding-top:12px">
+                <button onclick="installApp()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;border:none;border-radius:8px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+                    📲 Встановити на пристрій
+                </button>
+                <div style="text-align:center;font-size:10px;color:var(--text-secondary);margin-top:6px">Додати на робочий екран як додаток</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1527,6 +1541,117 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- PWA: Icon + Manifest + Install -->
+<script>
+(function() {
+    // Генеруємо іконку 192x192 з canvas
+    function generateAppIcon(size) {
+        var c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        var ctx = c.getContext('2d');
+        // Фон
+        ctx.fillStyle = '#1a3a5e';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, size, size, size * 0.18);
+        ctx.fill();
+        // Автобус emoji
+        ctx.font = (size * 0.35) + 'px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🚐', size / 2, size * 0.42);
+        // Текст GB
+        ctx.fillStyle = 'white';
+        ctx.font = '800 ' + (size * 0.22) + 'px Montserrat, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('GRESKO', size / 2, size * 0.65);
+        ctx.fillStyle = '#d90d0d';
+        ctx.font = '800 ' + (size * 0.2) + 'px Montserrat, Arial, sans-serif';
+        ctx.fillText('BUS', size / 2, size * 0.84);
+        return c.toDataURL('image/png');
+    }
+
+    // Створюємо іконки
+    var icon192 = generateAppIcon(192);
+    var icon512 = generateAppIcon(512);
+
+    // Apple touch icon
+    var appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = icon192;
+    document.head.appendChild(appleIcon);
+
+    // Favicon
+    var favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.href = icon192;
+    document.head.appendChild(favicon);
+
+    // Web App Manifest (inline data URI)
+    var manifest = {
+        name: 'GrescoBus CRM',
+        short_name: 'GrescoBus',
+        description: 'CRM Пасажири — GrescoBus',
+        start_url: location.href,
+        display: 'standalone',
+        orientation: 'portrait',
+        theme_color: '#1a3a5e',
+        background_color: '#f5f7fa',
+        icons: [
+            { src: icon192, sizes: '192x192', type: 'image/png' },
+            { src: icon512, sizes: '512x512', type: 'image/png' }
+        ]
+    };
+    var manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    document.head.appendChild(manifestLink);
+})();
+
+// PWA Install prompt
+var deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    var banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = '';
+}
+
+function installApp() {
+    if (deferredInstallPrompt) {
+        // Chrome / Android — нативний промпт
+        deferredInstallPrompt.prompt();
+        deferredInstallPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                showToast('GrescoBus встановлено!');
+                var banner = document.getElementById('installBanner');
+                if (banner) banner.style.display = 'none';
+            }
+            deferredInstallPrompt = null;
+        });
+    } else {
+        // iOS / інші — показуємо інструкцію
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+            showToast('Натисніть кнопку "Поділитися" (📤) внизу Safari, потім "На початковий екран"', 6000);
+        } else {
+            showToast('Відкрийте меню браузера (⋮) → "Додати на головний екран" або "Встановити додаток"', 6000);
+        }
+    }
+}
+
+// Показуємо банер встановлення якщо ще не встановлено
+window.addEventListener('DOMContentLoaded', function() {
+    if (!window.matchMedia('(display-mode: standalone)').matches && !navigator.standalone) {
+        showInstallBanner();
+    }
+});
+</script>
 
 <!-- Google Maps API -->
 <script>
@@ -5020,10 +5145,10 @@ function resetDefaultColumns() {
 function showLoader(text) { document.getElementById('loaderText').textContent = text || 'Завантаження...'; document.getElementById('globalLoader').classList.add('show'); }
 function hideLoader() { document.getElementById('globalLoader').classList.remove('show'); }
 
-function showToast(msg) {
+function showToast(msg, duration) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    setTimeout(() => t.classList.remove('show'), duration || 2500);
 }
 
 function showConfirm(text, cb) {
