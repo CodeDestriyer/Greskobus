@@ -1952,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ================================================================
 // SILENT SYNC
 // ================================================================
-function silentSync(manual) {
+function silentSync(manual, force) {
     if (manual) {
         // Ручна синхронізація — повна з лоадером та архівом
         showLoader('🔄 Синхронізація всіх даних...');
@@ -1996,8 +1996,8 @@ function silentSync(manual) {
 
     // Автоматична тиха синхронізація (без лоадера)
     // Якщо не await-режим — пропускаємо коли відкрита модалка
-    if (!manual && document.querySelector('.modal-overlay.show')) return Promise.resolve();
-    if (!manual && document.querySelector('.bottom-sheet-overlay.show')) return Promise.resolve();
+    if (!manual && !force && document.querySelector('.modal-overlay.show')) return Promise.resolve();
+    if (!manual && !force && document.querySelector('.bottom-sheet-overlay.show')) return Promise.resolve();
 
     return Promise.all([
         apiPost('getAll', { sheet: 'all' }),
@@ -4030,7 +4030,7 @@ async function savePassenger() {
             }
             // Чекаємо поки дані реально оновляться у списку
             showLoader('⏳ Оновлення списку...');
-            await silentSync();
+            await silentSync(false, true);
             hideLoader();
             editingPaxId = null;
             closeModal('passengerModal');
@@ -4073,7 +4073,7 @@ async function savePassenger() {
         selectedFormCalId = '';
         // Чекаємо поки дані реально з'являться у списку
         showLoader('⏳ Оновлення списку...');
-        await silentSync();
+        await silentSync(false, true);
         hideLoader();
         closeModal('passengerModal');
         showToast('✅ Пасажир додано: ' + res.pax_id);
@@ -5097,7 +5097,7 @@ function deleteTrip(calId, city, date) {
         if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || 'Невідома помилка')); return; }
         // Чекаємо поки дані реально оновляться перед показом результату
         showLoader('⏳ Оновлення списку...');
-        await silentSync();
+        await silentSync(false, true);
         hideLoader();
         showToast('✅ Рейс видалено');
     });
