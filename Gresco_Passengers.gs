@@ -2111,12 +2111,11 @@ function doPost(e) {
   var result = { ok: false, error: 'Unknown action: ' + action };
 
   // Дії що потребують логування (запис/зміна даних)
+  // Логуємо тільки важливі дії (додавання, видалення, архівація, рейси)
+  // НЕ логуємо: updateField, updatePassenger, bulkUpdateField, updateTrip, updateRouteField
   var LOGGED_ACTIONS = {
     'addPassenger': 'Додано пасажира',
     'clonePassenger': 'Клоновано пасажира',
-    'updateField': 'Оновлено поле',
-    'updatePassenger': 'Оновлено пасажира',
-    'bulkUpdateField': 'Масове оновлення',
     'assignTrip': 'Призначено рейс',
     'unassignTrip': 'Знято з рейсу',
     'reassignTrip': 'Пересадка на рейс',
@@ -2126,16 +2125,11 @@ function doPost(e) {
     'restorePassenger': 'Відновлено з архіву',
     'moveDirection': 'Зміна напряму',
     'createTrip': 'Створено рейс',
-    'updateTrip': 'Оновлено рейс',
     'archiveTrip': 'Архівовано рейс',
     'deleteTrip': 'Видалено рейс',
     'duplicateTrip': 'Дубльовано рейс',
-    'addToRoute': 'Додано в маршрут',
     'createRoute': 'Створено маршрут',
-    'deleteRoute': 'Видалено маршрут',
-    'updateRouteField': 'Оновлено поле маршруту',
-    'assignSeat': 'Призначено місце',
-    'freeSeat': 'Звільнено місце'
+    'deleteRoute': 'Видалено маршрут'
   };
 
   try {
