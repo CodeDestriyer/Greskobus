@@ -51,7 +51,7 @@
         .hdr-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; position: relative; overflow: visible; flex-shrink: 0; }
         .hdr-avatar::after { content: ''; position: absolute; bottom: -1px; left: -1px; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #1a3a5e; z-index: 10; }
         /* Свій аватар — sync статус */
-        .user-avatar { cursor: pointer; }
+        .user-avatar { cursor: pointer; background: var(--accent); }
         .user-avatar::after { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
         .user-avatar.sync-ok::after { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); animation: none; }
         .user-avatar.sync-error::after { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
