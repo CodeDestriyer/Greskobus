@@ -2007,7 +2007,18 @@ function silentSync(manual, force) {
         apiPost('getTrips', { filter: {} }),
         apiPost('getRoutesList', {})
     ]).then(([paxRes, tripRes, routeRes]) => {
-        if (paxRes.ok) { passengers = paxRes.data; applyOptimizedOrder(); }
+        if (paxRes.ok) {
+            passengers = paxRes.data;
+            applyOptimizedOrder();
+            // Якщо щойно додали ліда — тримаємо його зверху
+            if (justAddedPaxId) {
+                const idx = passengers.findIndex(p => p['PAX_ID'] === justAddedPaxId);
+                if (idx > 0) {
+                    const [pax] = passengers.splice(idx, 1);
+                    passengers.unshift(pax);
+                }
+            }
+        }
         if (tripRes.ok) trips = tripRes.data;
         if (routeRes.ok && routeRes.data) {
             var newList = routeRes.data;
