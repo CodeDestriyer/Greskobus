@@ -1956,7 +1956,7 @@ function silentSync(manual) {
     if (manual) {
         // Ручна синхронізація — повна з лоадером та архівом
         showLoader('🔄 Синхронізація всіх даних...');
-        Promise.all([
+        return Promise.all([
             apiPost('getAll', { sheet: 'all' }),
             apiPost('getTrips', { filter: {} }),
             apiPost('getRoutesList', {}),
@@ -1992,14 +1992,14 @@ function silentSync(manual) {
             hideLoader();
             showToast('❌ Помилка синхронізації: ' + (e.message || 'мережа'));
         });
-        return;
     }
 
     // Автоматична тиха синхронізація (без лоадера)
-    if (document.querySelector('.modal-overlay.show')) return;
-    if (document.querySelector('.bottom-sheet-overlay.show')) return;
+    // Якщо не await-режим — пропускаємо коли відкрита модалка
+    if (!manual && document.querySelector('.modal-overlay.show')) return Promise.resolve();
+    if (!manual && document.querySelector('.bottom-sheet-overlay.show')) return Promise.resolve();
 
-    Promise.all([
+    return Promise.all([
         apiPost('getAll', { sheet: 'all' }),
         apiPost('getTrips', { filter: {} }),
         apiPost('getRoutesList', {})
@@ -4028,12 +4028,13 @@ async function savePassenger() {
                 p['Валюта багажу'] = formData.currencyWeight;
                 p['Примітка'] = formData.note;
             }
+            // Чекаємо поки дані реально оновляться у списку
+            showLoader('⏳ Оновлення списку...');
+            await silentSync();
             hideLoader();
-            showToast('✅ Пасажира оновлено');
             editingPaxId = null;
             closeModal('passengerModal');
-            render();
-            silentSync();
+            showToast('✅ Пасажира оновлено');
         } else {
             hideLoader();
             showToast('❌ ' + (res.error || 'Помилка збереження'));
@@ -4068,15 +4069,14 @@ async function savePassenger() {
         // Якщо менеджер обрав рейс з suggest панелі — призначаємо
         if (selectedFormCalId) {
             await apiPost('assignTrip', { cal_id: selectedFormCalId, pax_ids: [res.pax_id] });
-            hideLoader();
-            showToast('✅ Пасажир додано + призначено рейс');
-        } else {
-            hideLoader();
-            showToast('✅ Пасажир додано: ' + res.pax_id);
         }
         selectedFormCalId = '';
+        // Чекаємо поки дані реально з'являться у списку
+        showLoader('⏳ Оновлення списку...');
+        await silentSync();
+        hideLoader();
         closeModal('passengerModal');
-        silentSync();
+        showToast('✅ Пасажир додано: ' + res.pax_id);
     } else {
         hideLoader();
         showToast('❌ ' + (res.error || 'Помилка'));
@@ -5095,11 +5095,9 @@ function deleteTrip(calId, city, date) {
         showLoader('Видалення рейсу...');
         var res = await apiPost('deleteTrip', { cal_id: calId });
         if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || 'Невідома помилка')); return; }
-        // Після API — оновлюємо дані з сервера перш ніж показати результат
-        var tripRes = await apiPost('getTrips', { filter: {} });
-        if (tripRes.ok) trips = tripRes.data;
-        renderTrips();
-        updateAllCounts();
+        // Чекаємо поки дані реально оновляться перед показом результату
+        showLoader('⏳ Оновлення списку...');
+        await silentSync();
         hideLoader();
         showToast('✅ Рейс видалено');
     });
