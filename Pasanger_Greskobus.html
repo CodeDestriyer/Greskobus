@@ -4232,16 +4232,20 @@ async function savePassenger() {
 
     // CREATE MODE — локальна перевірка дублікатів (надійніша за API)
     const nameLower = name.toLowerCase().trim();
-    const phoneClean = phone.replace(/[\s\-\(\)]/g, '');
+    const phoneDigits = phone.replace(/\D/g, ''); // тільки цифри
+    // Також перевіряємо останні 9 цифр (без коду країни)
+    const phoneTail = phoneDigits.length >= 9 ? phoneDigits.slice(-9) : phoneDigits;
     let localExact = null, localSoft = null;
     for (const p of passengers) {
         const pName = String(p['Піб'] || '').toLowerCase().trim();
-        const pPhone = String(p['Телефон пасажира'] || '').replace(/[\s\-\(\)]/g, '');
+        const pDigits = String(p['Телефон пасажира'] || '').replace(/\D/g, '');
+        const pTail = pDigits.length >= 9 ? pDigits.slice(-9) : pDigits;
         const pDate = String(p['Дата виїзду'] || '').trim();
-        if (pName === nameLower && pPhone === phoneClean && pDate === date && nameLower && phoneClean && date) {
+        const phoneMatch = phoneTail && pTail && (phoneDigits === pDigits || phoneTail === pTail);
+        if (pName === nameLower && phoneMatch && pDate === date && nameLower && date) {
             localExact = p; break;
         }
-        if (!localSoft && pName === nameLower && pPhone === phoneClean && nameLower && phoneClean) {
+        if (!localSoft && pName === nameLower && phoneMatch && nameLower) {
             localSoft = p;
         }
     }
