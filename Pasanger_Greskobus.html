@@ -1692,25 +1692,38 @@
     favicon.href = icon192;
     document.head.appendChild(favicon);
 
-    // Web App Manifest (inline data URI)
-    var manifest = {
-        name: 'GrescoBus CRM',
-        short_name: 'GrescoBus',
-        description: 'CRM Пасажири — GrescoBus',
-        start_url: location.href,
-        display: 'standalone',
-        orientation: 'portrait',
-        theme_color: '#1a3a5e',
-        background_color: '#f5f7fa',
-        icons: [
-            { src: icon192, sizes: '192x192', type: 'image/png' },
-            { src: icon512, sizes: '512x512', type: 'image/png' }
-        ]
-    };
+    // Web App Manifest — спочатку пробуємо файл, fallback на inline
     var manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
-    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    // Перевіряємо чи manifest.json доступний
+    fetch('manifest.json', { method: 'HEAD' }).then(function(r) {
+        if (r.ok) {
+            manifestLink.href = 'manifest.json';
+        } else {
+            throw new Error('no file');
+        }
+    }).catch(function() {
+        // Fallback — inline manifest (для Google Apps Script)
+        var m = {
+            name: 'GrescoBus CRM', short_name: 'GrescoBus',
+            description: 'CRM Пасажири — GrescoBus',
+            start_url: location.href, display: 'standalone',
+            orientation: 'portrait', theme_color: '#1a3a5e', background_color: '#f5f7fa',
+            icons: [
+                { src: icon192, sizes: '192x192', type: 'image/png' },
+                { src: icon512, sizes: '512x512', type: 'image/png' }
+            ]
+        };
+        manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m));
+    });
     document.head.appendChild(manifestLink);
+
+    // Service Worker — реєструємо якщо доступний
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(function() {
+            // SW недоступний (напр. Google Apps Script) — ігноруємо
+        });
+    }
 })();
 
 // PWA Install prompt

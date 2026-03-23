@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><title>Generate GrescoBus Icons</title></head>
+<body>
+<h2>Натисніть щоб завантажити іконки для PWA</h2>
+<button onclick="gen(192)">Завантажити icon-192.png</button>
+<button onclick="gen(512)">Завантажити icon-512.png</button>
+<script>
+function gen(size) {
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#1a3a5e');
+    grad.addColorStop(1, '#0f2440');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, size, size, size * 0.18);
+    ctx.fill();
+    ctx.font = (size * 0.35) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('\uD83D\uDE90', size / 2, size * 0.42);
+    ctx.fillStyle = 'white';
+    ctx.font = '800 ' + (size * 0.22) + 'px Arial, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('GRESKO', size / 2, size * 0.65);
+    ctx.fillStyle = '#d90d0d';
+    ctx.font = '800 ' + (size * 0.2) + 'px Arial, sans-serif';
+    ctx.fillText('BUS', size / 2, size * 0.84);
+
+    var a = document.createElement('a');
+    a.download = 'icon-' + size + '.png';
+    a.href = c.toDataURL('image/png');
+    a.click();
+}
+</script>
+</body></html>
