@@ -1194,14 +1194,19 @@
 
 <!-- COLUMN CONFIGURATOR MODAL -->
 <div class="modal-overlay" id="columnModal" onclick="if(event.target===this)closeModal('columnModal')">
-    <div class="modal" style="max-width:380px">
+    <div class="modal" style="max-width:400px">
         <div class="modal-header">
-            <div class="modal-title">⚙️ Колонки «Основне»</div>
+            <div class="modal-title">⚙️ Налаштування відображення</div>
             <button class="modal-close" onclick="closeModal('columnModal')">✕</button>
         </div>
-        <div class="modal-body" style="padding:12px">
+        <!-- Таби: Картка / Основне -->
+        <div style="display:flex;border-bottom:2px solid var(--border);background:#f8fafc">
+            <button id="cfgTabCard" onclick="switchCfgTab('card')" style="flex:1;padding:10px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary);margin-bottom:-2px">🃏 Картка</button>
+            <button id="cfgTabOsnovne" onclick="switchCfgTab('osnovne')" style="flex:1;padding:10px;border:none;background:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-secondary);margin-bottom:-2px">👤 Основне</button>
+        </div>
+        <div class="modal-body" style="padding:12px;max-height:55vh;overflow-y:auto">
             <div class="col-cfg-section">
-                <div class="col-cfg-label">Оберіть колонки для секції «Основне»</div>
+                <div class="col-cfg-label" id="colCfgLabel">Що показувати на картці пасажира в списку</div>
                 <div class="col-cfg-list" id="colCfgList"></div>
             </div>
         </div>
@@ -1680,6 +1685,25 @@ const COL_MAP = {
     calId:'CAL_ID'
 };
 const DEFAULT_OSNOVNE_FIELDS = ['name','phone','phoneReg','direction','date','seats'];
+// Поля які можна показати/сховати на картці
+const CARD_FIELD_OPTIONS = [
+    { key:'direction', label:'Напрям (UA→EU / EU→UA)' },
+    { key:'phone', label:'Телефон пасажира' },
+    { key:'seats', label:'Кількість місць' },
+    { key:'date', label:'Дата виїзду' },
+    { key:'price', label:'Ціна + валюта' },
+    { key:'deposit', label:'Завдаток' },
+    { key:'name', label:'ПІБ' },
+    { key:'smartId', label:'SmartSender ID' },
+    { key:'pax_id', label:'PAX_ID' },
+    { key:'route', label:'Маршрут (від → до)' },
+    { key:'tripDate', label:'Дата рейсу' },
+    { key:'dateCreated', label:'Дата реєстрації' },
+    { key:'leadStatus', label:'Статус ліда (бейдж)' },
+    { key:'payStatus', label:'Статус оплати (бейдж)' },
+    { key:'debt', label:'Борг (бейдж)' }
+];
+const DEFAULT_CARD_FIELDS = ['direction','phone','seats','date','price','deposit','name','pax_id','smartId','route','leadStatus','payStatus','debt'];
 const OTHER_SECTIONS = [
     { key:'route', title:'🗺️ Маршрут', fields:['from','to','timing','vehicle','seatInCar','calId'] },
     { key:'finance', title:'💰 Фінанси', fields:['price','currency','deposit','currencyDeposit','weight','weightPrice','currencyWeight','debt'] },
@@ -1691,6 +1715,14 @@ const OTHER_SECTIONS = [
 function getManagerColsKey() {
     var name = getManagerName() || 'default';
     return 'gresco_cols_' + name.replace(/\s+/g, '_');
+}
+function getManagerCardKey() {
+    var name = getManagerName() || 'default';
+    return 'gresco_card_' + name.replace(/\s+/g, '_');
+}
+function getCardFields() {
+    try { var s = localStorage.getItem(getManagerCardKey()); if (s) return JSON.parse(s); } catch(e) {}
+    return DEFAULT_CARD_FIELDS;
 }
 function getOsnovneFields() {
     try { var s = localStorage.getItem(getManagerColsKey()); if (s) return JSON.parse(s); } catch(e) {}
@@ -1830,13 +1862,16 @@ function renameManager(idx) {
         var oldKey = 'gresco_cols_' + oldName.replace(/\s+/g, '_');
         slots[idx] = newName.trim();
         saveManagerSlots(slots);
-        // Мігруємо налаштування колонок на нове ім'я
-        var oldCols = localStorage.getItem(oldKey);
-        if (oldCols) {
-            var newKey = 'gresco_cols_' + newName.trim().replace(/\s+/g, '_');
-            localStorage.setItem(newKey, oldCols);
-            localStorage.removeItem(oldKey);
-        }
+        // Мігруємо налаштування на нове ім'я
+        var newSuffix = newName.trim().replace(/\s+/g, '_');
+        var oldSuffix = oldName.replace(/\s+/g, '_');
+        ['gresco_cols_', 'gresco_card_'].forEach(function(prefix) {
+            var oldData = localStorage.getItem(prefix + oldSuffix);
+            if (oldData) {
+                localStorage.setItem(prefix + newSuffix, oldData);
+                localStorage.removeItem(prefix + oldSuffix);
+            }
+        });
         // Якщо перейменовуємо активного — оновити активне ім'я
         if (getManagerName() === oldName) {
             setManagerName(newName.trim());
@@ -2996,6 +3031,8 @@ function renderCard(p) {
         if (trip) tripDateStr = formatTripDate(trip.date);
     }
 
+    var cf = getCardFields();
+
     return `<div class="lead-card ${statusClass} ${selectedIds.has(id)?'selected':''}">
         <div class="card-header" onclick="smartToggleDetails(event, '${id}')">
             <div class="card-header-top">
@@ -3004,28 +3041,27 @@ function renderCard(p) {
                 </div>
                 <div class="card-body">
                     <div class="card-top-row">
-                        <span class="card-direction ${dirColorClass}">${dirLabel}</span>
-                        <span class="card-phone">${phone}</span>
-                        <span class="card-seats">${seats}м</span>
-                        <span class="card-date">${date || '—'}</span>
-                        <div class="card-price-wrap">
-                            <span class="card-price">${price ? price + ' ' + curr : '—'}</span>
-                            <span class="card-deposit ${depN > 0 ? 'has-deposit' : ''}">${depN > 0 ? 'завд: ' + depN + ' ' + (p['Валюта завдатку'] || curr) : 'без завдатку'}</span>
-                        </div>
+                        ${cf.includes('direction') ? `<span class="card-direction ${dirColorClass}">${dirLabel}</span>` : ''}
+                        ${cf.includes('phone') ? `<span class="card-phone">${phone}</span>` : ''}
+                        ${cf.includes('seats') ? `<span class="card-seats">${seats}м</span>` : ''}
+                        ${cf.includes('date') ? `<span class="card-date">${date || '—'}</span>` : ''}
+                        ${cf.includes('price') || cf.includes('deposit') ? `<div class="card-price-wrap">
+                            ${cf.includes('price') ? `<span class="card-price">${price ? price + ' ' + curr : '—'}</span>` : ''}
+                            ${cf.includes('deposit') ? `<span class="card-deposit ${depN > 0 ? 'has-deposit' : ''}">${depN > 0 ? 'завд: ' + depN + ' ' + (p['Валюта завдатку'] || curr) : 'без завдатку'}</span>` : ''}
+                        </div>` : ''}
                     </div>
                     <div class="card-row2-wrap">
                         <div class="card-info-row">
-                            <span class="card-id">${id}</span>
-                            <span class="card-smart-id">SS: ${smartId || '—'}</span>
-                            <span class="card-name">${name}</span>
-                            ${lsBadge} ${payBadge}
-                            ${debt > 0 ? '<span class="badge badge-debt">Борг: '+debt+'</span>' : ''}
+                            ${cf.includes('pax_id') ? `<span class="card-id">${id}</span>` : ''}
+                            ${cf.includes('smartId') ? `<span class="card-smart-id">SS: ${smartId || '—'}</span>` : ''}
+                            ${cf.includes('name') ? `<span class="card-name">${name}</span>` : ''}
+                            ${cf.includes('leadStatus') ? lsBadge : ''} ${cf.includes('payStatus') ? payBadge : ''}
+                            ${cf.includes('debt') && debt > 0 ? '<span class="badge badge-debt">Борг: '+debt+'</span>' : ''}
                         </div>
-                        ${routeHtml} <!-- Маршрут: від → до -->
-                        <!-- Мета-рядок: дата рейсу, дата реєстрації, SmartSender ID -->
+                        ${cf.includes('route') ? routeHtml : ''}
                         <div class="card-meta-row">
-                            ${tripDateStr ? '<span class="card-meta-tag">🗓 Рейс: '+tripDateStr+'</span>' : ''}
-                            ${dateCreated && dateCreated !== '—' ? '<span class="card-meta-tag">📅 Реєстр: '+dateCreated+'</span>' : ''}
+                            ${cf.includes('tripDate') && tripDateStr ? '<span class="card-meta-tag">🗓 Рейс: '+tripDateStr+'</span>' : ''}
+                            ${cf.includes('dateCreated') && dateCreated && dateCreated !== '—' ? '<span class="card-meta-tag">📅 Реєстр: '+dateCreated+'</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -5134,62 +5170,88 @@ function getAllColumnKeys() {
     return Object.keys(COL_MAP);
 }
 
+var cfgActiveTab = 'card'; // 'card' | 'osnovne'
+var cardCfgTemp = [];
+
 function openColumnConfigurator() {
+    cfgActiveTab = 'card';
     colCfgTemp = [...getOsnovneFields()];
-    renderColumnConfigurator();
+    cardCfgTemp = [...getCardFields()];
+    switchCfgTab('card');
     openModal('columnModal');
 }
 
+function switchCfgTab(tab) {
+    cfgActiveTab = tab;
+    var btnCard = document.getElementById('cfgTabCard');
+    var btnOsn = document.getElementById('cfgTabOsnovne');
+    if (btnCard) { btnCard.style.borderBottom = tab === 'card' ? '2px solid var(--primary)' : 'none'; btnCard.style.color = tab === 'card' ? 'var(--primary)' : 'var(--text-secondary)'; }
+    if (btnOsn) { btnOsn.style.borderBottom = tab === 'osnovne' ? '2px solid var(--primary)' : 'none'; btnOsn.style.color = tab === 'osnovne' ? 'var(--primary)' : 'var(--text-secondary)'; }
+    var label = document.getElementById('colCfgLabel');
+    if (label) label.textContent = tab === 'card' ? 'Що показувати на картці пасажира в списку' : 'Які поля показувати у вкладці «Основне» при натисканні на ліда';
+    renderColumnConfigurator();
+}
+
 function renderColumnConfigurator() {
-    const list = document.getElementById('colCfgList');
+    var list = document.getElementById('colCfgList');
     if (!list) return;
 
-    const allKeys = getAllColumnKeys();
-    // Collect all fields used in OTHER_SECTIONS
-    const otherFields = new Set();
-    OTHER_SECTIONS.forEach(s => s.fields.forEach(f => otherFields.add(f)));
-
-    list.innerHTML = allKeys.map(key => {
-        const colName = COL_MAP[key] || key;
-        const isSel = colCfgTemp.includes(key);
-        const isInOther = otherFields.has(key) && !isSel;
-        return `<div class="col-cfg-item ${isSel?'checked':''} ${isInOther?'greyed':''}" onclick="toggleColCfg('${key}')">
-            <div class="col-check">${isSel ? '✓' : ''}</div>
-            <div class="col-name">${colName}</div>
-        </div>`;
-    }).join('');
+    if (cfgActiveTab === 'card') {
+        list.innerHTML = CARD_FIELD_OPTIONS.map(function(f) {
+            var isSel = cardCfgTemp.includes(f.key);
+            return '<div class="col-cfg-item ' + (isSel ? 'checked' : '') + '" onclick="toggleColCfg(\'' + f.key + '\')">' +
+                '<div class="col-check">' + (isSel ? '✓' : '') + '</div>' +
+                '<div class="col-name">' + f.label + '</div></div>';
+        }).join('');
+    } else {
+        var allKeys = getAllColumnKeys();
+        var otherFields = new Set();
+        OTHER_SECTIONS.forEach(function(s) { s.fields.forEach(function(f) { otherFields.add(f); }); });
+        list.innerHTML = allKeys.map(function(key) {
+            var colName = COL_MAP[key] || key;
+            var isSel = colCfgTemp.includes(key);
+            var isInOther = otherFields.has(key) && !isSel;
+            return '<div class="col-cfg-item ' + (isSel ? 'checked' : '') + ' ' + (isInOther ? 'greyed' : '') + '" onclick="toggleColCfg(\'' + key + '\')">' +
+                '<div class="col-check">' + (isSel ? '✓' : '') + '</div>' +
+                '<div class="col-name">' + colName + '</div></div>';
+        }).join('');
+    }
 }
 
 function toggleColCfg(key) {
-    const idx = colCfgTemp.indexOf(key);
-    if (idx >= 0) {
-        colCfgTemp.splice(idx, 1);
+    if (cfgActiveTab === 'card') {
+        var idx = cardCfgTemp.indexOf(key);
+        if (idx >= 0) cardCfgTemp.splice(idx, 1); else cardCfgTemp.push(key);
     } else {
-        colCfgTemp.push(key);
+        var idx = colCfgTemp.indexOf(key);
+        if (idx >= 0) colCfgTemp.splice(idx, 1); else colCfgTemp.push(key);
     }
     renderColumnConfigurator();
 }
 
 function saveColumnConfig() {
-    if (colCfgTemp.length === 0) {
-        alert('Оберіть хоча б одну колонку');
-        return;
-    }
+    if (cfgActiveTab === 'osnovne' && colCfgTemp.length === 0) { showToast('Оберіть хоча б одну колонку'); return; }
+    if (cfgActiveTab === 'card' && cardCfgTemp.length === 0) { showToast('Оберіть хоча б один елемент'); return; }
     localStorage.setItem(getManagerColsKey(), JSON.stringify(colCfgTemp));
+    localStorage.setItem(getManagerCardKey(), JSON.stringify(cardCfgTemp));
     closeModal('columnModal');
-    // Re-render open details
     if (openDetailsId) {
-        const p = passengers.find(x => x['PAX_ID'] === openDetailsId);
+        var p = passengers.find(function(x) { return x['PAX_ID'] === openDetailsId; });
         if (p) {
-            const el = document.getElementById('details-' + openDetailsId);
+            var el = document.getElementById('details-' + openDetailsId);
             if (el) el.innerHTML = renderDetails(p);
         }
     }
-    renderList();
+    render();
+    showToast('✅ Налаштування збережено');
 }
 
 function resetDefaultColumns() {
-    colCfgTemp = [...DEFAULT_OSNOVNE_FIELDS];
+    if (cfgActiveTab === 'card') {
+        cardCfgTemp = [...DEFAULT_CARD_FIELDS];
+    } else {
+        colCfgTemp = [...DEFAULT_OSNOVNE_FIELDS];
+    }
     renderColumnConfigurator();
 }
 
