@@ -3286,6 +3286,7 @@ function renderCard(p) {
     const dirLabel = isUaEu ? 'UA → EU' : 'EU → UA';
     const dirColorClass = isUaEu ? 'dir-badge-ua-eu' : 'dir-badge-eu-ua';
     const phone = p['Телефон пасажира'] || '';
+    const cleanPhone = phone.replace(/[^+\d]/g, '');
     const seats = p['Кількість місць'] || 1;
     const date = formatTripDate(p['Дата виїзду'] || '');
     const price = p['Ціна квитка'] || '';
@@ -3410,8 +3411,8 @@ function renderCard(p) {
         <div class="card-details ${isOpen?'show':''}" id="details-${id}">${isOpen ? renderDetails(p) : ''}</div>
         <!-- === ПАНЕЛЬ ДІЙ ЛІДА: 4 кнопки в ряд (flex). Показується при ▼ === -->
         <div class="card-actions ${isActionsOpen?'show':''}" id="actions-${id}">
-            <button class="btn-card-action btn-call" onclick="window.open('tel:${phone}')">📞 Дзвінок</button>
-            <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${phone}','${smartId}')">✉️ Писати</button>
+            <button class="btn-card-action btn-call" onclick="window.open('tel:${cleanPhone}')">📞 Дзвінок</button>
+            <button class="btn-card-action btn-write" onclick="event.stopPropagation(); openMessengerPopup('${cleanPhone}','${smartId}')">✉️ Писати</button>
             <button class="btn-card-action btn-edit" onclick="event.stopPropagation(); openEditPax('${id}')">✏️ Редагувати</button>
             <button class="btn-card-action" style="background:#ede9fe;color:#7c3aed;" onclick="event.stopPropagation(); toggleTripAssignDD('${id}')">🚐 Рейс</button>
             <button class="btn-card-action" style="background:#f3f4f6;color:#6b7280;" onclick="event.stopPropagation(); archivePax('${id}','${name}')">📦 Архів</button>
