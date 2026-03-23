@@ -46,7 +46,12 @@
         .search-input:focus { background: rgba(255,255,255,0.25); }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: 0.7; }
         .header-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-        .sync-indicator { color: rgba(255,255,255,0.6); font-size: 10px; white-space: nowrap; }
+        .sync-indicator { font-size: 10px; white-space: nowrap; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+        .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .sync-dot.ok { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+        .sync-dot.error { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); animation: pulse-new24 1.5s ease-in-out infinite; }
+        .sync-dot.loading { background: #f59e0b; animation: pulse-new24 0.8s ease-in-out infinite; }
+        .sync-time { color: rgba(255,255,255,0.7); font-weight: 600; }
         .user-avatar { width: 30px; height: 30px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 11px; flex-shrink: 0; cursor: pointer; position: relative; }
         .presence-bar { display: flex; align-items: center; gap: 4px; margin-right: 4px; }
         .presence-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 9px; position: relative; cursor: default; flex-shrink: 0; }
@@ -950,7 +955,7 @@
         </div>
         <div class="header-right">
             <div class="presence-bar" id="presenceBar"></div>
-            <span class="sync-indicator" id="syncIndicator">🔄 —</span>
+            <span class="sync-indicator" id="syncIndicator" onclick="silentSync(true)" title="Натисніть для синхронізації"><span class="sync-dot loading" id="syncDot"></span><span class="sync-time" id="syncTime">—</span></span>
             <div class="user-avatar" onclick="openManagerModal()" title="Натисніть щоб змінити менеджера">?</div>
         </div>
     </div>
@@ -1966,19 +1971,27 @@ document.addEventListener('DOMContentLoaded', function() {
 // ================================================================
 // API
 // ================================================================
+var _apiActiveRequests = 0;
+
 async function apiPost(action, data) {
     if (!API_URL) {
         showToast('⚠️ API_URL не налаштовано');
         return { ok: false, error: 'No API URL' };
     }
+    _apiActiveRequests++;
+    if (_apiActiveRequests === 1) setSyncStatus('loading');
     try {
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action, manager: getManagerName(), ...data })
         });
+        _apiActiveRequests = Math.max(0, _apiActiveRequests - 1);
+        if (_apiActiveRequests === 0) setSyncStatus('ok');
         return await res.json();
     } catch (e) {
+        _apiActiveRequests = Math.max(0, _apiActiveRequests - 1);
+        setSyncStatus('error');
         console.error('API error:', e);
         showToast('❌ Помилка мережі');
         return { ok: false, error: e.message };
@@ -2112,7 +2125,18 @@ function updateSyncTime() {
     const now = new Date();
     const h = String(now.getHours()).padStart(2,'0');
     const m = String(now.getMinutes()).padStart(2,'0');
-    document.getElementById('syncIndicator').textContent = '🔄 ' + h + ':' + m;
+    setSyncStatus('ok', h + ':' + m);
+}
+
+function setSyncStatus(status, timeText) {
+    const dot = document.getElementById('syncDot');
+    const time = document.getElementById('syncTime');
+    if (dot) {
+        dot.className = 'sync-dot ' + status; // ok, error, loading
+    }
+    if (time && timeText !== undefined) {
+        time.textContent = timeText;
+    }
 }
 
 // ================================================================
