@@ -4937,39 +4937,37 @@ function editTrip(calId) {
 function archiveTrip(calId, city, date) {
     showConfirm('Архівувати рейс «' + city + ' ' + date + '»?', async (yes) => {
         if (!yes) return;
-        showLoader('Архівування...');
-        const res = await apiPost('archiveTrip', { cal_id: calId });
+        showLoader('Архівування рейсу...');
+        var res = await apiPost('archiveTrip', { cal_id: calId });
+        if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || '')); return; }
+        // Після API — оновлюємо дані з сервера перш ніж показати результат
+        var tripRes = await apiPost('getTrips', { filter: {} });
+        if (tripRes.ok) trips = tripRes.data;
+        renderTrips();
+        updateAllCounts();
         hideLoader();
-        if (res.ok) {
-            // Видаляємо з локального масиву і одразу оновлюємо UI
-            trips = trips.filter(function(t) { return t.cal_id !== calId; });
-            renderTrips();
-            updateAllCounts();
-            showToast('✅ Рейс архівовано');
-            silentSync();
-        } else showToast('❌ ' + (res.error || ''));
+        showToast('✅ Рейс архівовано');
     });
 }
 
 // Delete trip
 function deleteTrip(calId, city, date) {
-    if (!calId || !calId.trim()) {
+    if (!calId || !String(calId).trim()) {
         showToast('❌ CAL_ID порожній — неможливо видалити');
         return;
     }
     showConfirm('Видалити рейс «' + city + ' ' + date + '»? Пасажири залишаться без рейсу.', async (yes) => {
         if (!yes) return;
-        showLoader('Видалення...');
-        const res = await apiPost('deleteTrip', { cal_id: calId });
+        showLoader('Видалення рейсу...');
+        var res = await apiPost('deleteTrip', { cal_id: calId });
+        if (!res.ok) { hideLoader(); showToast('❌ ' + (res.error || 'Невідома помилка')); return; }
+        // Після API — оновлюємо дані з сервера перш ніж показати результат
+        var tripRes = await apiPost('getTrips', { filter: {} });
+        if (tripRes.ok) trips = tripRes.data;
+        renderTrips();
+        updateAllCounts();
         hideLoader();
-        if (res.ok) {
-            // Видаляємо з локального масиву і одразу оновлюємо UI
-            trips = trips.filter(function(t) { return t.cal_id !== calId; });
-            renderTrips();
-            updateAllCounts();
-            showToast('✅ Рейс видалено');
-            silentSync();
-        } else showToast('❌ ' + (res.error || 'Невідома помилка'));
+        showToast('✅ Рейс видалено');
     });
 }
 
